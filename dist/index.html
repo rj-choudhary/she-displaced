@@ -99,9 +99,9 @@
         revealing the women most at risk of being left behind.
       </p>
       <div class="hero-stats">
-        <div class="stat"><span class="stat-num" id="stat-countries">157</span><span class="stat-label">Countries Scored</span></div>
-        <div class="stat"><span class="stat-num" id="stat-years">17</span><span class="stat-label">Years of Data</span></div>
-        <div class="stat"><span class="stat-num" id="stat-top">Afghanistan</span><span class="stat-label">Highest Risk 2025</span></div>
+        <div class="stat"><span class="stat-num" id="stat-countries">159</span><span class="stat-label">Countries Scored</span></div>
+        <div class="stat"><span class="stat-num" id="stat-years">20</span><span class="stat-label">Years of Data</span></div>
+        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk</span></div>
       </div>
       <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth'})">
         Explore the Data ↓
@@ -628,10 +628,7 @@
           <div class="c-label">Disaster Burden (log-compressed)</div>
         </div>
       </div>
-      <p class="closing-note">
-        Data sources: ND-GAIN Country Index · World Economic Forum Global Gender Gap Report · EM-DAT International Disaster Database
-      </p>
-      <p class="closing-credit">Built for Data Connect Conference · Women in Analytics 2025</p>
+      <p class="closing-credit">Built for Data Connect Conference · Women in Analytics 2026</p>
     </div>
   </section>
 
@@ -924,7 +921,7 @@
           <h2>Limitations &amp; Caveats</h2>
           <ul class="limitations-list">
             <li><strong>Equal weighting assumption:</strong> The 35/30/35 weights are theoretically motivated but not empirically derived. Future work could use regression or expert elicitation to calibrate weights.</li>
-            <li><strong>Gender Gap Index coverage:</strong> The WEF index is only available from 2006, limiting the full SDRS to 2006–2023 (17 years). Vulnerability and readiness data extends back to 1995.</li>
+            <li><strong>Gender Gap Index coverage:</strong> The WEF index is only available from 2006, limiting the full SDRS to 2006–2025 (20 years). Vulnerability and readiness data extends back to 1995.</li>
             <li><strong>Country-level aggregation:</strong> All scores are national averages. Sub-national variation — which is often where the most vulnerable women live — is not captured.</li>
             <li><strong>Correlation between components:</strong> Climate vulnerability and gender inequality are not independent — poorer countries tend to score worse on both. The SDRS does not attempt to decompose this correlation.</li>
             <li><strong>Displacement as outcome:</strong> The SDRS predicts <em>risk</em> of displacement, not actual displacement. Actual displacement data is fragmented and inconsistently reported globally.</li>
@@ -946,12 +943,12 @@
           <span class="footer-she">She</span><span class="footer-displaced">Displaced</span>
         </div>
         <p class="footer-tagline">Gendered Climate Displacement Risk Scoring</p>
-        <p class="footer-event">Built for Data Connect Conference · Women in Analytics 2025</p>
+        <p class="footer-event">Built for Data Connect Conference · Women in Analytics 2026</p>
       </div>
 
       <div class="footer-col">
         <div class="footer-col-title">About the Project</div>
-        <p>She Displaced is the first composite index mapping where climate vulnerability intersects with gender inequality to predict displacement risk specifically for women. It combines three peer-reviewed data sources into a single, actionable score across 157 countries and 17 years.</p>
+        <p>She Displaced is the first composite index mapping where climate vulnerability intersects with gender inequality to predict displacement risk specifically for women. It combines three peer-reviewed data sources into a single, actionable score across 159 countries and 20 years.</p>
       </div>
 
       <div class="footer-col">
@@ -971,16 +968,15 @@
           <span class="tech-tag">TopoJSON</span>
           <span class="tech-tag">Vanilla JS</span>
           <span class="tech-tag">Python</span>
-          <span class="tech-tag">Kiro AI</span>
+          <span class="tech-tag">Google Gemini</span>
           <span class="tech-tag">Claude Sonnet</span>
           <span class="tech-tag">Vercel</span>
         </div>
-        <p class="footer-ai-note">Index construction, data processing, and visualization code generated with Kiro AI (powered by Claude Sonnet 4.6). All methodology reviewed and validated by the project team.</p>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <span>© 2025 She Displaced · Data Connect Conference</span>
+      <span>She Displaced · Data Connect Conference</span>
       <span class="footer-sep">·</span>
       <span>SDRS is a research index, not a policy instrument</span>
       <span class="footer-sep">·</span>

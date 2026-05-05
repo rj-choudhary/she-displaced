@@ -236,7 +236,5 @@ export function initLab(data) {
   }
 
   // ── Initial render ────────────────────────────────────────────
-  updateSliderUI()
-  // Defer leaderboard render to ensure DOM is painted
-  requestAnimationFrame(() => renderLeaderboard())
+  applyPreset('default')
 }

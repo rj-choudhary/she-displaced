@@ -2972,9 +2972,9 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 0 auto;
   padding: 0 20px;
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 2fr 3fr;
   gap: 20px;
-  align-items: stretch;   /* equal height columns */
+  align-items: stretch;
 }
 
 /* ── Left column ── */
@@ -3044,13 +3044,15 @@ input[type="range"]::-webkit-slider-thumb {
 
 .lab-slider-row {
   display: grid;
-  grid-template-columns: 18px 1fr 80px 36px;
+  grid-template-columns: 130px 1fr 36px;
   align-items: center;
-  gap: 6px;
-  min-width: 0;   /* prevent grid blowout */
+  gap: 8px;
+  min-width: 0;
 }
 
-.lab-slider-icon { font-size: 13px; text-align: center; flex-shrink: 0; }
+.lab-slider-icon {
+  display: none;  /* hidden — label carries the meaning */
+}
 
 .lab-slider-label {
   font-size: 11px;
@@ -3070,6 +3072,10 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   width: 100%;
   min-width: 0;
+  /* padding keeps thumb within track bounds at min/max */
+  padding: 0 7px;
+  box-sizing: border-box;
+  background-clip: content-box;
 }
 .lab-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -3078,6 +3084,12 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--coral);
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  margin-top: -5px;
+}
+.lab-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
 }
 
 .lab-slider-val {
@@ -3289,10 +3301,9 @@ input[type="range"]::-webkit-slider-thumb {
   z-index: 10;
 }
 
-/* Active pill — glow + brighter text (overrides base styles) */
-#section-map ~ * .chapter-pill.active,
+/* Active pill — underline + text highlight only, no background */
 .chapter-pill.active {
-  background: rgba(232,97,74,0.15);
+  background: transparent;
 }
 
 .chapter-pill.active .chapter-num {

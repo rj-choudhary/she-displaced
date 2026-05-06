@@ -70,11 +70,11 @@ function drawHopeChart(data) {
   // Grid
   g.append('g').attr('transform', `translate(0,${iH})`)
     .call(d3.axisBottom(xScale).ticks(5).tickSize(-iH).tickFormat(''))
-    .call(ax => { ax.select('.domain').remove(); ax.selectAll('line').attr('stroke','rgba(255,255,255,0.06)') })
+    .call(ax => { ax.select('.domain').remove(); ax.selectAll('line').attr('stroke','rgba(0,0,0,0.06)') })
 
   g.append('g').attr('transform', `translate(0,${iH})`)
     .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format('.2f')))
-    .call(ax => { ax.select('.domain').remove(); ax.selectAll('text').attr('fill','rgba(255,255,255,0.3)').attr('font-size',9) })
+    .call(ax => { ax.select('.domain').remove(); ax.selectAll('text').attr('fill','#6B7280').attr('font-size',9) })
 
   top15.forEach((c, i) => {
     const y = i * (barH + barGap)
@@ -95,7 +95,7 @@ function drawHopeChart(data) {
     // Country label
     g.append('text').attr('x', -8).attr('y', y + barH/2)
       .attr('text-anchor','end').attr('dominant-baseline','middle')
-      .attr('font-size', 11).attr('fill','rgba(255,255,255,0.75)')
+      .attr('font-size', 11).attr('fill','#374151').attr('font-weight','500')
       .text(c.name.length > 20 ? c.name.slice(0,18)+'…' : c.name)
 
     // Improvement badge
@@ -107,7 +107,7 @@ function drawHopeChart(data) {
     // Peak annotation
     g.append('text').attr('x', xScale(c.peak) + 4).attr('y', y + barH/2)
       .attr('dominant-baseline','middle').attr('font-size', 8.5)
-      .attr('fill','rgba(255,255,255,0.2)')
+      .attr('fill','rgba(0,0,0,0.3)')
       .text('peak ' + c.peakYear)
 
     // Hover
@@ -134,13 +134,14 @@ function drawHopeChart(data) {
 
   // Legend
   const ly = H - 18
-  svg.append('rect').attr('x', margin.left).attr('y', ly-8).attr('width',14).attr('height',8).attr('rx',2).attr('fill','rgba(255,255,255,0.12)')
-  svg.append('text').attr('x', margin.left+18).attr('y', ly).attr('fill','rgba(255,255,255,0.3)').attr('font-size',9).text('Peak SDRS')
+  svg.append('rect').attr('x', margin.left).attr('y', ly-8).attr('width',14).attr('height',8).attr('rx',2).attr('fill','rgba(0,0,0,0.12)')
+  svg.append('text').attr('x', margin.left+18).attr('y', ly).attr('fill','#6B7280').attr('font-size',9).text('Peak SDRS')
   svg.append('rect').attr('x', margin.left+90).attr('y', ly-8).attr('width',14).attr('height',8).attr('rx',2).attr('fill','#2AADAD').attr('opacity',0.85)
-  svg.append('text').attr('x', margin.left+108).attr('y', ly).attr('fill','rgba(255,255,255,0.3)').attr('font-size',9).text('Current SDRS (color = region)')
+  svg.append('text').attr('x', margin.left+108).attr('y', ly).attr('fill','#6B7280').attr('font-size',9).text('Current SDRS (color = region)')
 }
 
 async function init() {
+  // Load full data — brotli-compressed to ~231KB, loads in <0.5s on most connections
   const data = await d3.json('/sdrs_data.json')
 
   // Hide loader
@@ -148,26 +149,24 @@ async function init() {
   overlay.classList.add('hidden')
   setTimeout(() => overlay.remove(), 700)
 
-  // Navigation first
+  // Navigation
   safe('nav', () => initNav())
 
-  // Hero particles
-  safe('particles', () => initHeroParticles())
+  // Hero particles — non-blocking
+  initHeroParticles().catch(e => console.error('[particles] failed:', e))
 
-  // Give browser one frame to paint the DOM before reading dimensions
+  // Render all charts with full data — year sliders work across 2006-2025
   requestAnimationFrame(() => {
-    setTimeout(() => {
-      safe('worldMap',    () => drawWorldMap(data))
-      safe('slope',       () => drawSlopeScrolly(data))
-      safe('bubble',      () => drawBubbleChart(data))
-      safe('radar',       () => drawRadarChart(data))
-      safe('delta',       () => drawDeltaChart(data))
-      safe('outlier',     () => drawOutlierRadar(data))
-      safe('disaster',    () => drawDisasterCharts(data))
-      safe('explorer',    () => initExplorer(data))
-      safe('lab',         () => initLab(data))
-      safe('hope',        () => drawHopeChart(data))
-    }, 100)
+    safe('worldMap',    () => drawWorldMap(data))
+    safe('slope',       () => drawSlopeScrolly(data))
+    safe('delta',       () => drawDeltaChart(data))
+    safe('radar',       () => drawRadarChart(data))
+    safe('outlier',     () => drawOutlierRadar(data))
+    safe('lab',         () => initLab(data))
+    safe('bubble',      () => drawBubbleChart(data))
+    safe('disaster',    () => drawDisasterCharts(data))
+    safe('explorer',    () => initExplorer(data))
+    safe('hope',        () => drawHopeChart(data))
   })
 }
 

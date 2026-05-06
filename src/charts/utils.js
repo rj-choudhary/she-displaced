@@ -39,11 +39,16 @@ export function moveTooltip(tooltipEl, event) {
   const vh = window.innerHeight
 
   let left = x + 16
-  let top  = y - th / 2
+  let top  = y + 16
 
+  // If tooltip would go off-screen right, flip to left of cursor
   if (left + tw > vw - 16) left = x - tw - 16
-  if (top < 8) top = 8
+
+  // If tooltip would go off-screen bottom, push it up but keep it near cursor
   if (top + th > vh - 8) top = vh - th - 8
+
+  // Never go above viewport
+  if (top < 8) top = 8
 
   tooltipEl.style.left = left + 'px'
   tooltipEl.style.top  = top  + 'px'

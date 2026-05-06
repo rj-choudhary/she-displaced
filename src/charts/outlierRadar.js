@@ -8,5 +8,5 @@ export function drawOutlierRadar(data) {
   if (!rwanda) return
 
   const tooltip = document.getElementById('radar-tooltip')
-  drawSingleRadar('outlier-chart-rwanda', rwanda, '#2AADAD', tooltip)
+  drawSingleRadar('outlier-chart-rwanda', rwanda, '#2AADAD', tooltip, null, { showBadge: false })
 }

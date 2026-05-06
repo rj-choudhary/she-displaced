@@ -48,6 +48,20 @@ export function drawBubbleChart(data) {
     .domain([velExt[0], 0, velExt[1]])
     .interpolator(d3.interpolateRgbBasis(['#0D9488','#9CA3AF','#C0392B']))
 
+  // Velocity category helper
+  function velCategory(iso) {
+    const v = velocityMap[iso] || 0
+    if (v > 0.002) return 'rising'
+    if (v < -0.002) return 'improving'
+    return 'stable'
+  }
+  function velGlyph(iso) {
+    const cat = velCategory(iso)
+    if (cat === 'rising') return '▲'
+    if (cat === 'improving') return '▼'
+    return '●'
+  }
+
   // ── Top 12 ────────────────────────────────────────────────────
   const avgSdrs = []
   byIso.forEach((recs, iso) => {
@@ -86,6 +100,25 @@ export function drawBubbleChart(data) {
     .attr('preserveAspectRatio','xMidYMid meet')
   const sg = scatterSvg.append('g').attr('transform',`translate(${sm.left},${sm.top})`)
 
+  // Glow filters for active/high-risk bubbles
+  const defs = scatterSvg.append('defs')
+  defs.html(`
+    <filter id="bubble-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="bubble-glow-strong" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  `)
+
   const xSc = d3.scaleLinear().domain([0.1, 0.7]).range([0,siW]).clamp(true)
   const ySc = d3.scaleLinear().domain([0.1, 0.85]).range([siH,0]).clamp(true)
   const rSc = d3.scaleSqrt().domain([0,15000000]).range([3,20]).clamp(true)
@@ -117,6 +150,7 @@ export function drawBubbleChart(data) {
     .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',10).text('Climate Vulnerability →')
 
   const bubblesG = sg.append('g').attr('class','bubbles')
+  const ringsG   = sg.append('g').attr('class','rings-group').style('pointer-events','none')
   const annotG   = sg.append('g').attr('class','annot-group')
   const labelG   = sg.append('g').attr('class','label-group')
 
@@ -271,15 +305,134 @@ export function drawBubbleChart(data) {
         exit => exit.transition().duration(300).attr('r',0).remove()
       )
 
-    // Opacity logic
+    // Opacity logic + crisis detection
     const activeIso = viewMode==='country' ? focusIso : clickedIso
+
+    // "Compounding Crisis" = gender_penalty > 0.4 AND vulnerability > 0.55
+    function isCrisis(d) {
+      return d.gender_penalty > 0.4 && d.vulnerability > 0.55
+    }
+
     bubblesG.selectAll('circle.bubble')
       .attr('opacity', d => {
-        if (!activeIso) return 0.75
-        return d.iso3===activeIso ? 1 : 0.2
+        if (!activeIso) return isCrisis(d) ? 0.92 : 0.75
+        return d.iso3===activeIso ? 1 : 0.18
       })
-      .attr('stroke', d => d.iso3===activeIso ? '#fff' : 'rgba(255,255,255,0.3)')
-      .attr('stroke-width', d => d.iso3===activeIso ? 2.5 : 0.5)
+      .attr('stroke', d => {
+        if (d.iso3===activeIso) return '#fff'
+        if (isCrisis(d)) return 'rgba(255,255,255,0.65)'
+        return 'rgba(255,255,255,0.3)'
+      })
+      .attr('stroke-width', d => {
+        if (d.iso3===activeIso) return 2.5
+        if (isCrisis(d)) return 1.2
+        return 0.5
+      })
+      .attr('filter', d => {
+        if (d.iso3===activeIso) return 'url(#bubble-glow-strong)'
+        if (isCrisis(d) && !activeIso) return 'url(#bubble-glow)'
+        return null
+      })
+
+    // Pulsing breathing ring on crisis bubbles (only when nothing is actively selected)
+    ringsG.selectAll('circle.crisis-pulse').remove()
+    ringsG.selectAll('circle.target-ring').remove()
+    ringsG.selectAll('circle.target-ring-outer').remove()
+
+    if (!activeIso) {
+      // Breathing pulse on crisis countries
+      const crisisData = yearData.filter(isCrisis)
+      const pulses = ringsG.selectAll('circle.crisis-pulse')
+        .data(crisisData, d => d.iso3)
+        .join('circle')
+        .attr('class', 'crisis-pulse')
+        .attr('cx', d => xSc(d.gender_penalty))
+        .attr('cy', d => ySc(d.vulnerability))
+        .attr('r', d => Math.max(rSc(d.total_affected||0), 4))
+        .attr('fill', 'none')
+        .attr('stroke', '#C0392B')
+        .attr('stroke-width', 1.5)
+        .attr('opacity', 0.7)
+
+      // Animate the pulse
+      pulses.each(function(d, i) {
+        const baseR = Math.max(rSc(d.total_affected||0), 4)
+        const sel = d3.select(this)
+        function pulse() {
+          sel.attr('r', baseR).attr('opacity', 0.7)
+            .transition().duration(1600).delay(i * 80).ease(d3.easeCubicOut)
+            .attr('r', baseR * 2.2)
+            .attr('opacity', 0)
+            .on('end', pulse)
+        }
+        pulse()
+      })
+    }
+
+    // Target-lock ring around active country (dual ring with rotation)
+    if (activeIso) {
+      const sel = yearData.find(d => d.iso3 === activeIso)
+      if (sel) {
+        const ax = xSc(sel.gender_penalty), ay = ySc(sel.vulnerability)
+        const ar = Math.max(rSc(sel.total_affected||0), 4)
+
+        // Outer rotating dashed ring
+        const outerRing = ringsG.append('circle')
+          .attr('class', 'target-ring-outer')
+          .attr('cx', ax).attr('cy', ay)
+          .attr('r', ar + 10)
+          .attr('fill', 'none')
+          .attr('stroke', '#E8614A')
+          .attr('stroke-width', 1.2)
+          .attr('stroke-dasharray', '3,4')
+          .attr('opacity', 0.7)
+
+        // Simple rotation via transform
+        function rotate() {
+          outerRing
+            .attr('transform', `rotate(0 ${ax} ${ay})`)
+            .transition().duration(6000).ease(d3.easeLinear)
+            .attr('transform', `rotate(360 ${ax} ${ay})`)
+            .on('end', rotate)
+        }
+        rotate()
+
+        // Inner solid glow ring
+        ringsG.append('circle')
+          .attr('class', 'target-ring')
+          .attr('cx', ax).attr('cy', ay)
+          .attr('r', ar + 4)
+          .attr('fill', 'none')
+          .attr('stroke', 'rgba(232,97,74,0.4)')
+          .attr('stroke-width', 2)
+      }
+    }
+
+    // Velocity glyphs (▲ rising, ● stable, ▼ improving) — only on bubbles large enough
+    const glyphData = yearData.filter(d => Math.max(rSc(d.total_affected||0),4) >= 7)
+    bubblesG.selectAll('text.vel-glyph').data(glyphData, d=>d.iso3)
+      .join(
+        enter => enter.append('text').attr('class','vel-glyph')
+          .attr('text-anchor','middle')
+          .attr('dominant-baseline','central')
+          .attr('pointer-events','none')
+          .attr('font-size', d => Math.max(rSc(d.total_affected||0),4) >= 12 ? 8 : 6)
+          .attr('font-weight','700')
+          .attr('fill','rgba(255,255,255,0.9)'),
+        update => update
+          .attr('font-size', d => Math.max(rSc(d.total_affected||0),4) >= 12 ? 8 : 6)
+      )
+      .attr('x', d=>xSc(d.gender_penalty))
+      .attr('y', d=>ySc(d.vulnerability))
+      .attr('opacity', d => {
+        if (!activeIso) return 0.9
+        return d.iso3===activeIso ? 1 : 0.15
+      })
+      .text(d => velGlyph(d.iso3))
+
+    // Remove glyphs for bubbles that are now too small
+    bubblesG.selectAll('text.vel-glyph').data(glyphData, d=>d.iso3)
+      .exit().remove()
 
     // Country journey path (country mode)
     journeyG.selectAll('*').remove()
@@ -339,8 +492,42 @@ export function drawBubbleChart(data) {
           ['Risk Velocity',(vel>=0?'+':'')+vel.toFixed(4)+'/yr'],
           ['Region',d.region],
         ]),event)
+
+        // Hover: scale up + add radiant ring
+        const self = d3.select(this)
+        const origR = Math.max(rSc(d.total_affected||0), 4)
+        self.transition().duration(150)
+          .attr('r', origR * 1.35)
+          .attr('stroke-width', 2)
+          .attr('stroke', '#fff')
+
+        // Remove any existing hover ring, add new one
+        ringsG.selectAll('.hover-ring').remove()
+        ringsG.append('circle')
+          .attr('class', 'hover-ring')
+          .attr('cx', xSc(d.gender_penalty))
+          .attr('cy', ySc(d.vulnerability))
+          .attr('r', origR)
+          .attr('fill', 'none')
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 1.5)
+          .attr('opacity', 0.8)
+          .transition().duration(500).ease(d3.easeCubicOut)
+          .attr('r', origR * 2.5)
+          .attr('opacity', 0)
+          .remove()
       })
-      .on('mouseleave',()=>hideTooltip(tooltip))
+      .on('mouseleave', function(event, d) {
+        hideTooltip(tooltip)
+        const self = d3.select(this)
+        const origR = Math.max(rSc(d.total_affected||0), 4)
+        const activeIso = viewMode==='country' ? focusIso : clickedIso
+        const isActive = d.iso3 === activeIso
+        self.transition().duration(200)
+          .attr('r', origR)
+          .attr('stroke-width', isActive ? 2.5 : (d.gender_penalty > 0.4 && d.vulnerability > 0.55 ? 1.2 : 0.5))
+          .attr('stroke', isActive ? '#fff' : (d.gender_penalty > 0.4 && d.vulnerability > 0.55 ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.3)'))
+      })
       .on('click', function(event,d) {
         event.stopPropagation()
         if (viewMode==='world') {
@@ -373,9 +560,17 @@ export function drawBubbleChart(data) {
       if (focusIso) {
         drawCountryDrilldown(focusIso)
       } else {
-        ddTitle.textContent    = 'Country Focus'
-        ddSubtitle.textContent = 'Search or click a bubble to select a country'
-        linesG.selectAll('*').remove()
+        // Pre-select a default country — Pakistan tells the most dramatic story (2022 flood peak)
+        const defaultIso = 'PAK'
+        const defaultName = (countries.find(c => c[0] === defaultIso) || [,'Pakistan'])[1]
+        if (sdrsData.some(d => d.iso3 === defaultIso)) {
+          setFocusCountry(defaultIso, defaultName)
+          return  // setFocusCountry already calls renderBubbles
+        } else {
+          ddTitle.textContent    = 'Country Focus'
+          ddSubtitle.textContent = 'Search or click a bubble to select a country'
+          linesG.selectAll('*').remove()
+        }
       }
     }
     renderBubbles(currentYear, false)
@@ -441,23 +636,66 @@ export function drawBubbleChart(data) {
   }
 
   // ── Year control ──────────────────────────────────────────────
-  function setYear(year) {
-    currentYear=year; slider.value=year; yearDisp.textContent=year
-    renderBubbles(year,true)
+  const timeline       = document.querySelector('.bubble-timeline')
+  const playIcon       = playBtn.querySelector('.play-icon')
+  const pauseIcon      = playBtn.querySelector('.pause-icon')
+  const progressRing   = playBtn.querySelector('.play-progress-fg')
+  const progressFill   = document.getElementById('timeline-progress-fill')
+  const RING_CIRCUMF   = 100.53  // 2π × 16
+
+  function updateProgress(year) {
+    const pct = (year - years[0]) / (years[years.length-1] - years[0])
+    // Progress ring (decreases dashoffset as progress increases)
+    if (progressRing) progressRing.style.strokeDashoffset = RING_CIRCUMF * (1 - pct)
+    // Linear fill under slider
+    if (progressFill) progressFill.style.width = (pct * 100) + '%'
   }
 
-  playBtn.addEventListener('click',()=>{
-    playing=!playing; playBtn.textContent=playing?'⏸ Pause':'▶ Play'
+  function togglePlayIcons(isPlaying) {
+    if (playIcon)  playIcon.style.display  = isPlaying ? 'none' : ''
+    if (pauseIcon) pauseIcon.style.display = isPlaying ? '' : 'none'
+    if (timeline) timeline.classList.toggle('playing', isPlaying)
+  }
+
+  function setYear(year) {
+    currentYear = year
+    slider.value = year
+    yearDisp.textContent = year
+    updateProgress(year)
+    renderBubbles(year, true)
+  }
+
+  function stopPlayback() {
+    playing = false
+    clearInterval(timer)
+    togglePlayIcons(false)
+  }
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing
+    togglePlayIcons(playing)
     if (playing) {
-      if (currentYear>=years[years.length-1]) setYear(years[0])
-      timer=setInterval(()=>{
-        const idx=years.indexOf(currentYear)
-        if (idx>=years.length-1){clearInterval(timer);playing=false;playBtn.textContent='▶ Play'}
-        else setYear(years[idx+1])
-      },800)
-    } else clearInterval(timer)
+      if (currentYear >= years[years.length-1]) setYear(years[0])
+      timer = setInterval(() => {
+        const idx = years.indexOf(currentYear)
+        if (idx >= years.length-1) {
+          stopPlayback()
+        } else {
+          setYear(years[idx+1])
+        }
+      }, 800)
+    } else {
+      clearInterval(timer)
+    }
   })
-  slider.addEventListener('input',()=>{clearInterval(timer);playing=false;playBtn.textContent='▶ Play';setYear(+slider.value)})
+
+  slider.addEventListener('input', () => {
+    stopPlayback()
+    setYear(+slider.value)
+  })
+
+  // Initialize progress on first render
+  updateProgress(currentYear)
 
   // Initial
   drawTop12()

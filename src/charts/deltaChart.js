@@ -33,7 +33,7 @@ export function drawDeltaChart(data) {
     .attr('text-anchor', 'middle')
     .attr('fill', 'rgba(255,255,255,0.35)')
     .attr('font-size', 9).attr('letter-spacing', '0.12em').attr('font-weight', '600')
-    .text('GENDER DISPLACEMENT DELTA  (SDRS − n_Vulnerability × 0.30)')
+    .text('GENDER DISPLACEMENT DELTA (SDRS − Climate × 0.30)')
 
   const xScale = d3.scaleLinear().domain([-0.01, 0.13]).range([0, innerW]).clamp(true)
 

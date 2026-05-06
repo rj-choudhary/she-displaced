@@ -20,6 +20,15 @@ const CAT_COLOR = {
 
 const DTYPES = Object.keys(DTYPE_META)
 
+// ── Number formatter: 1.2M / 450K / 847 ───────────────────────
+function fmtNum(v) {
+  if (v == null || isNaN(v)) return '—'
+  var n = Number(v)
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M'
+  if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'K'
+  return Math.round(n).toString()
+}
+
 // ── Main entry ────────────────────────────────────────────────
 export function drawDisasterCharts(data) {
   var countryInput    = document.getElementById('disaster-country-input')
@@ -92,194 +101,247 @@ export function drawDisasterCharts(data) {
   renderAll()
 }
 
-// ── 05A: Sunburst ─────────────────────────────────────────────
+// ── 05A: Genetic Makeup Waffle Chart ──────────────────────────
+// Each cell = 1% of affected population, colored by disaster type
+// Creates a "DNA strip" feel aligned with the "Genetic Makeup" narrative
 function drawSunburst(rec, iso) {
   var container = document.getElementById('sunburst-chart')
   var tooltip   = document.getElementById('sunburst-tooltip')
   container.innerHTML = ''
 
-  var W = 300, H = 300
-  var cx = W / 2, cy = H / 2
-  var innerR = 44, outerR = 112
+  var W = 360, H = 320
+  var margin = { top: 14, right: 14, bottom: 20, left: 14 }
 
   var svg = d3.select(container)
     .append('svg')
     .attr('viewBox', '0 0 ' + W + ' ' + H)
     .style('width', '100%')
-    .style('height', '300px')
+    .style('height', '320px')
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
   // No data state
   if (!rec || !rec.disasters) {
     svg.append('text')
-      .attr('x', cx).attr('y', cy)
-      .attr('text-anchor', 'middle').attr('fill', '#6B7280').attr('font-size', 13)
+      .attr('x', W/2).attr('y', H/2)
+      .attr('text-anchor', 'middle').attr('fill', 'rgba(255,255,255,0.4)').attr('font-size', 13)
       .text('No disaster data for this year')
     return
   }
 
-  // Build hierarchy: categories → subtypes
-  var catMap = {}
+  // Build subtype list with affected counts
+  var subtypes = []
   DTYPES.forEach(function(dtype) {
     var meta = DTYPE_META[dtype]
     var d    = rec.disasters[dtype]
     if (!d || d.affected <= 0) return
-    if (!catMap[meta.category]) catMap[meta.category] = { affected: 0, subtypes: [] }
-    catMap[meta.category].affected += d.affected
-    catMap[meta.category].subtypes.push({
-      key:      dtype,
-      label:    meta.label,
-      affected: d.affected,
-      deaths:   d.deaths,
-      count:    d.count,
-      color:    meta.color,
+    subtypes.push({
+      key: dtype,
+      label: meta.label,
       category: meta.category,
+      affected: d.affected,
+      deaths: d.deaths,
+      count: d.count,
+      color: meta.color,
     })
   })
 
-  var cats = Object.keys(catMap)
-  if (!cats.length) {
+  if (!subtypes.length) {
     svg.append('text')
-      .attr('x', cx).attr('y', cy)
-      .attr('text-anchor', 'middle').attr('fill', '#6B7280').attr('font-size', 13)
+      .attr('x', W/2).attr('y', H/2)
+      .attr('text-anchor', 'middle').attr('fill', 'rgba(255,255,255,0.4)').attr('font-size', 13)
       .text('No affected population recorded')
     return
   }
 
-  var totalAffected = d3.sum(cats.map(function(c) { return catMap[c].affected }))
+  var totalAffected = d3.sum(subtypes, function(d) { return d.affected })
 
-  // Log-compress for visual width
-  function logW(v) { return v > 0 ? Math.log1p(v) : 0 }
-  var totalLog = d3.sum(cats.map(function(c) { return logW(catMap[c].affected) }))
+  // Sort subtypes by affected count descending for visual order
+  subtypes.sort(function(a, b) { return b.affected - a.affected })
 
-  // Draw inner ring (categories) and outer ring (subtypes)
-  var catStartAngle = -Math.PI / 2
-  var midR = (innerR + outerR) / 2
-
-  cats.forEach(function(catKey) {
-    var cat = catMap[catKey]
-    var catAngle = (logW(cat.affected) / totalLog) * 2 * Math.PI
-    var catEndAngle = catStartAngle + catAngle
-
-    // Inner arc (category)
-    var arcInner = d3.arc()
-      .innerRadius(innerR)
-      .outerRadius(midR - 2)
-      .startAngle(catStartAngle)
-      .endAngle(catEndAngle)
-      .padAngle(0.02)
-      .cornerRadius(2)
-
-    svg.append('path')
-      .attr('transform', 'translate(' + cx + ',' + cy + ')')
-      .attr('d', arcInner)
-      .attr('fill', CAT_COLOR[catKey])
-      .attr('opacity', 0.85)
-      .on('mousemove', function(event) {
-        showTooltip(tooltip, tooltipHtml(catKey, [
-          ['Total Affected', cat.affected.toLocaleString()],
-          ['Share', (cat.affected / totalAffected * 100).toFixed(1) + '%'],
-        ]), event)
-      })
-      .on('mouseleave', function() { hideTooltip(tooltip) })
-
-    // Category label
-    var midAngle = catStartAngle + catAngle / 2
-    var lx = cx + (midR - 10) * Math.cos(midAngle)
-    var ly = cy + (midR - 10) * Math.sin(midAngle)
-    if (catAngle > 0.3) {
-      svg.append('text')
-        .attr('x', lx).attr('y', ly)
-        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
-        .attr('fill', '#fff').attr('font-size', 8).attr('font-weight', '700')
-        .attr('pointer-events', 'none')
-        .text(catKey.slice(0, 5))
-    }
-
-    // Outer arcs (subtypes)
-    var catTotalLog = d3.sum(cat.subtypes.map(function(s) { return logW(s.affected) }))
-    var subStart = catStartAngle
-
-    cat.subtypes.forEach(function(sub) {
-      var subAngle = catTotalLog > 0
-        ? (logW(sub.affected) / catTotalLog) * catAngle
-        : catAngle / cat.subtypes.length
-      var subEnd = subStart + subAngle
-
-      var arcOuter = d3.arc()
-        .innerRadius(midR + 2)
-        .outerRadius(outerR)
-        .startAngle(subStart)
-        .endAngle(subEnd)
-        .padAngle(0.015)
-        .cornerRadius(2)
-
-      svg.append('path')
-        .attr('transform', 'translate(' + cx + ',' + cy + ')')
-        .attr('d', arcOuter)
-        .attr('fill', sub.color)
-        .attr('opacity', 0.9)
-        .style('cursor', 'pointer')
-        .on('mousemove', function(event) {
-          showTooltip(tooltip, tooltipHtml(sub.label, [
-            ['Category', sub.category],
-            ['Affected', sub.affected.toLocaleString()],
-            ['Deaths', sub.deaths.toLocaleString()],
-            ['Events', sub.count],
-            ['Share of total', (sub.affected / totalAffected * 100).toFixed(1) + '%'],
-          ]), event)
-        })
-        .on('mouseleave', function() { hideTooltip(tooltip) })
-        .on('click', function() {
-          // Highlight this subtype in streamgraph
-          document.dispatchEvent(new CustomEvent('disaster-filter', { detail: sub.key }))
-        })
-
-      // Subtype label
-      var subMid = subStart + subAngle / 2
-      if (subAngle > 0.25) {
-        var slx = cx + (outerR - 14) * Math.cos(subMid)
-        var sly = cy + (outerR - 14) * Math.sin(subMid)
-        svg.append('text')
-          .attr('x', slx).attr('y', sly)
-          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
-          .attr('fill', '#fff').attr('font-size', 7.5)
-          .attr('pointer-events', 'none')
-          .text(sub.label)
-      }
-
-      subStart = subEnd
-    })
-
-    catStartAngle = catEndAngle
+  // Compute how many cells each subtype gets (out of 100)
+  var cellCounts = subtypes.map(function(s) {
+    return Object.assign({}, s, { exactPct: (s.affected / totalAffected) * 100, cells: 0 })
   })
 
-  // Center: total affected
-  svg.append('circle')
-    .attr('cx', cx).attr('cy', cy).attr('r', innerR - 4)
-    .attr('fill', 'rgba(26,26,46,0.9)')
+  // Floor-then-distribute-remainder method to get exact 100 cells
+  var totalFloored = 0
+  cellCounts.forEach(function(c) {
+    c.cells = Math.floor(c.exactPct)
+    totalFloored += c.cells
+  })
+  var remainder = 100 - totalFloored
+  var byFraction = cellCounts.slice()
+    .map(function(c) { return { ref: c, frac: c.exactPct - Math.floor(c.exactPct) } })
+    .sort(function(a, b) { return b.frac - a.frac })
+  for (var i = 0; i < remainder && i < byFraction.length; i++) {
+    byFraction[i].ref.cells += 1
+  }
+
+  // Ensure every subtype with >0 affected gets at least 1 cell
+  cellCounts.forEach(function(c) {
+    if (c.affected > 0 && c.cells === 0) {
+      var largest = cellCounts.reduce(function(a, b) { return a.cells > b.cells ? a : b })
+      if (largest.cells > 1) {
+        largest.cells -= 1
+        c.cells = 1
+      }
+    }
+  })
+
+  // Grid: 10 cols × 10 rows, legend on right
+  var COLS = 10, ROWS = 10
+  var legendWidth = 140
+  var gridAreaW = W - margin.left - margin.right - legendWidth
+  var gridAreaH = H - margin.top - margin.bottom - 24
+  var cellSize = Math.min(gridAreaW / COLS, gridAreaH / ROWS) - 2
+  var gap = 2.5
+  var gridStartX = margin.left + 4
+  var gridStartY = margin.top + 4
+
+  // Build cell data array (100 cells assigned by subtype)
+  var cells = []
+  cellCounts.forEach(function(subtype) {
+    for (var j = 0; j < subtype.cells; j++) {
+      cells.push(subtype)
+    }
+  })
+  // Pad to 100 if any cells are missing
+  while (cells.length < 100) {
+    cells.push({ color: 'rgba(255,255,255,0.08)', label: 'Other', affected: 0, deaths: 0, count: 0, category: '—', key: null })
+  }
+
+  // Grid background frame
+  svg.append('rect')
+    .attr('x', gridStartX - 4).attr('y', gridStartY - 4)
+    .attr('width', COLS * (cellSize + gap) + 4)
+    .attr('height', ROWS * (cellSize + gap) + 4)
+    .attr('fill', 'rgba(255,255,255,0.02)')
+    .attr('stroke', 'rgba(255,255,255,0.08)')
+    .attr('stroke-width', 1)
+    .attr('rx', 4)
+
+  // Draw cells with staggered animation from bottom-up
+  cells.forEach(function(cell, idx) {
+    var col = idx % COLS
+    var row = Math.floor(idx / COLS)
+    var y = gridStartY + (ROWS - 1 - row) * (cellSize + gap)
+    var x = gridStartX + col * (cellSize + gap)
+
+    var rect = svg.append('rect')
+      .attr('x', x).attr('y', y)
+      .attr('width', cellSize).attr('height', cellSize)
+      .attr('rx', 2)
+      .attr('fill', cell.color)
+      .attr('opacity', 0)
+      .attr('data-subtype', cell.key || 'other')
+      .style('cursor', cell.affected > 0 ? 'pointer' : 'default')
+
+    rect.transition()
+      .duration(400)
+      .delay(idx * 8)
+      .ease(d3.easeCubicOut)
+      .attr('opacity', cell.affected > 0 ? 0.9 : 0.25)
+
+    if (cell.affected > 0) {
+      rect
+        .on('mousemove', function(event) {
+          // Highlight all cells of same subtype
+          svg.selectAll('rect[data-subtype="' + cell.key + '"]')
+            .attr('opacity', 1)
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1)
+          svg.selectAll('rect[data-subtype]:not([data-subtype="' + cell.key + '"])')
+            .attr('opacity', 0.25)
+
+          showTooltip(tooltip, tooltipHtml(cell.label, [
+            ['Category', cell.category],
+            ['Affected', fmtNum(cell.affected)],
+            ['Deaths', fmtNum(cell.deaths)],
+            ['Events', cell.count],
+            ['Share', (cell.affected / totalAffected * 100).toFixed(1) + '%'],
+          ]), event)
+        })
+        .on('mouseleave', function() {
+          svg.selectAll('rect[data-subtype]')
+            .attr('stroke', null)
+            .attr('stroke-width', null)
+            .attr('opacity', function() {
+              return this.getAttribute('data-subtype') === 'other' ? 0.25 : 0.9
+            })
+          hideTooltip(tooltip)
+        })
+    }
+  })
+
+  // "Each cell = 1%" caption beneath grid
+  svg.append('text')
+    .attr('x', gridStartX)
+    .attr('y', gridStartY + ROWS * (cellSize + gap) + 14)
+    .attr('fill', 'rgba(255,255,255,0.35)')
+    .attr('font-size', 9)
+    .attr('font-style', 'italic')
+    .text('Each cell = 1% of affected population')
+
+  // Right-side legend
+  var legendX = gridStartX + COLS * (cellSize + gap) + 14
+  var legendTop = gridStartY - 2
 
   svg.append('text')
-    .attr('x', cx).attr('y', cy - 10)
-    .attr('text-anchor', 'middle').attr('fill', '#E8614A')
-    .attr('font-size', 9).attr('font-weight', '700').attr('letter-spacing', '0.08em')
-    .text('TOTAL')
+    .attr('x', legendX).attr('y', legendTop + 8)
+    .attr('fill', 'rgba(255,255,255,0.5)')
+    .attr('font-size', 9)
+    .attr('font-weight', '700')
+    .attr('letter-spacing', '0.14em')
+    .text('BREAKDOWN')
+
+  // Legend rows — visible subtypes
+  var visibleSubs = cellCounts.filter(function(c) { return c.cells > 0 }).slice(0, 6)
+  visibleSubs.forEach(function(sub, idx) {
+    var y = legendTop + 26 + idx * 26
+
+    // Color chip
+    svg.append('rect')
+      .attr('x', legendX).attr('y', y - 7)
+      .attr('width', 10).attr('height', 10).attr('rx', 2)
+      .attr('fill', sub.color)
+      .style('cursor', 'pointer')
+
+    // Label
+    svg.append('text')
+      .attr('x', legendX + 16).attr('y', y)
+      .attr('fill', 'rgba(255,255,255,0.85)')
+      .attr('font-size', 10.5)
+      .attr('font-weight', '600')
+      .attr('dominant-baseline', 'middle')
+      .text(sub.label)
+
+    // Percentage + count
+    svg.append('text')
+      .attr('x', legendX + 16).attr('y', y + 11)
+      .attr('fill', 'rgba(255,255,255,0.45)')
+      .attr('font-size', 9)
+      .attr('dominant-baseline', 'middle')
+      .text(sub.exactPct.toFixed(1) + '% · ' + fmtNum(sub.affected))
+  })
+
+  // Total affected — bottom of legend area
+  var totalY = H - margin.bottom - 10
+  svg.append('text')
+    .attr('x', legendX)
+    .attr('y', totalY - 8)
+    .attr('fill', '#E8614A')
+    .attr('font-size', 9)
+    .attr('font-weight', '700')
+    .attr('letter-spacing', '0.1em')
+    .text('TOTAL AFFECTED')
 
   svg.append('text')
-    .attr('x', cx).attr('y', cy + 4)
-    .attr('text-anchor', 'middle').attr('fill', '#fff')
-    .attr('font-size', 11).attr('font-weight', '700')
-    .text(totalAffected >= 1e6
-      ? (totalAffected / 1e6).toFixed(1) + 'M'
-      : totalAffected >= 1e3
-        ? (totalAffected / 1e3).toFixed(0) + 'K'
-        : totalAffected.toString())
-
-  svg.append('text')
-    .attr('x', cx).attr('y', cy + 18)
-    .attr('text-anchor', 'middle').attr('fill', 'rgba(255,255,255,0.4)')
-    .attr('font-size', 8)
-    .text('affected')
+    .attr('x', legendX)
+    .attr('y', totalY + 10)
+    .attr('fill', '#fff')
+    .attr('font-size', 20)
+    .attr('font-weight', '700')
+    .text(fmtNum(totalAffected))
 }
 
 // ── 05C: Lethality vs Disruption Matrix ───────────────────────
@@ -330,16 +392,28 @@ function drawLethalityMatrix(countryData, iso) {
   var midX = xScale(d3.median(pts, function(d) { return d.total_affected + 1 }))
   var midY = yScale(d3.median(pts, function(d) { return d.total_deaths + 1 }))
 
-  // Quadrant fills
+  // Quadrant fills — all 4 quadrants
+  // Top-left: high deaths, low affected = RARE TRAGEDY
+  g.append('rect').attr('x', 0).attr('y', 0)
+    .attr('width', midX).attr('height', midY)
+    .attr('fill', 'rgba(139,92,246,0.05)')
+
+  // Top-right: high deaths, high affected = CATASTROPHE
   g.append('rect').attr('x', midX).attr('y', 0)
     .attr('width', iW - midX).attr('height', midY)
     .attr('fill', 'rgba(192,57,43,0.07)')
 
+  // Bottom-left: low deaths, low affected = MANAGED
+  g.append('rect').attr('x', 0).attr('y', midY)
+    .attr('width', midX).attr('height', iH - midY)
+    .attr('fill', 'rgba(255,255,255,0.02)')
+
+  // Bottom-right: low deaths, high affected = SILENT CRISIS
   g.append('rect').attr('x', midX).attr('y', midY)
     .attr('width', iW - midX).attr('height', iH - midY)
     .attr('fill', 'rgba(13,148,136,0.09)')
 
-  // Dashed border on Silent Crisis only
+  // Dashed border on Silent Crisis
   g.append('rect').attr('x', midX).attr('y', midY)
     .attr('width', iW - midX).attr('height', iH - midY)
     .attr('fill', 'none')
@@ -347,7 +421,7 @@ function drawLethalityMatrix(countryData, iso) {
     .attr('stroke-width', 1)
     .attr('stroke-dasharray', '4,3')
 
-  // Quadrant pill labels — placed at far corners, away from bubbles
+  // Quadrant pill labels — all 4 quadrants
   function pillLabel(x, y, text, bg, anchor) {
     var pad = 4
     var tw  = text.length * 5.5 + pad * 2
@@ -366,10 +440,14 @@ function drawLethalityMatrix(countryData, iso) {
       .text(text)
   }
 
-  // Top-right corner: CATASTROPHE
+  // Top-right: CATASTROPHE
   pillLabel(iW - 2, 12, 'CATASTROPHE', 'rgba(192,57,43,0.75)', 'end')
-  // Bottom-right corner: SILENT CRISIS
+  // Bottom-right: SILENT CRISIS
   pillLabel(iW - 2, iH - 4, 'SILENT CRISIS', 'rgba(13,148,136,0.75)', 'end')
+  // Top-left: RARE TRAGEDY
+  pillLabel(2, 12, 'RARE TRAGEDY', 'rgba(139,92,246,0.65)', 'start')
+  // Bottom-left: MANAGED
+  pillLabel(2, iH - 4, 'MANAGED', 'rgba(107,114,128,0.6)', 'start')
 
   // Axes
   g.append('g').attr('transform', 'translate(0,' + iH + ')')
@@ -384,16 +462,16 @@ function drawLethalityMatrix(countryData, iso) {
     .call(function(ax) { ax.selectAll('line').attr('stroke', 'rgba(0,0,0,0.08)') })
     .call(function(ax) { ax.selectAll('text').attr('fill', '#9CA3AF').attr('font-size', 8) })
 
-  // Axis labels — inside bottom margin
+  // Axis labels — inside bottom margin, with log scale note
   svg.append('text')
     .attr('x', margin.left + iW / 2).attr('y', H - 38)
     .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 8)
-    .text('← Disruption (Total Affected, log) →')
+    .text('← Disruption: Total Affected (log scale) →')
 
   svg.append('text').attr('transform', 'rotate(-90)')
     .attr('x', -(margin.top + iH / 2)).attr('y', 11)
     .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 8)
-    .text('← Lethality (Deaths, log) →')
+    .text('← Lethality: Deaths (log scale) →')
 
   // Bubbles — drawn last so they're on top of quadrant fills
   pts.forEach(function(d) {
@@ -412,8 +490,8 @@ function drawLethalityMatrix(countryData, iso) {
       .on('mousemove', function(event) {
         var lm = d.lethality_multiplier
         showTooltip(tooltip, tooltipHtml(d.name + ' ' + d.year, [
-          ['Total Affected', d.total_affected.toLocaleString()],
-          ['Total Deaths', d.total_deaths.toLocaleString()],
+          ['Total Affected', fmtNum(d.total_affected)],
+          ['Total Deaths', fmtNum(d.total_deaths)],
           ['Gender Gap', d.gender_gap ? d.gender_gap.toFixed(3) : 'N/A'],
           ['Lethality Multiplier', lm != null ? lm.toFixed(5) : 'N/A'],
           ['SDRS', d.sdrs ? d.sdrs.toFixed(3) : 'N/A'],
@@ -465,8 +543,8 @@ function drawStreamgraph(countryData, iso) {
   var tooltip   = document.getElementById('stream-tooltip')
   container.innerHTML = ''
 
-  var W = 900, H = 200
-  var margin = { top: 24, right: 24, bottom: 36, left: 44 }
+  var W = 900, H = 260
+  var margin = { top: 24, right: 24, bottom: 52, left: 56 }
   var iW = W - margin.left - margin.right
   var iH = H - margin.top - margin.bottom
 
@@ -474,7 +552,7 @@ function drawStreamgraph(countryData, iso) {
     .append('svg')
     .attr('viewBox', '0 0 ' + W + ' ' + H)
     .style('width', '100%')
-    .style('height', '200px')
+    .style('height', '260px')
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
   var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
@@ -504,9 +582,10 @@ function drawStreamgraph(countryData, iso) {
     .domain(d3.extent(years))
     .range([0, iW])
 
+  // Use stackOffsetSilhouette for symmetric centering with meaningful y-axis
   var stack = d3.stack()
     .keys(DTYPES)
-    .offset(d3.stackOffsetWiggle)
+    .offset(d3.stackOffsetSilhouette)
     .order(d3.stackOrderInsideOut)
 
   var series = stack(matrix)
@@ -518,40 +597,175 @@ function drawStreamgraph(countryData, iso) {
 
   var yScale = d3.scaleLinear().domain(yExtent).range([iH, 0])
 
+  // Compute max total affected for reference scale
+  var maxTotal = d3.max(matrix, function(row) {
+    return DTYPES.reduce(function(sum, dtype) { return sum + row[dtype] }, 0)
+  })
+
   var area = d3.area()
     .x(function(d, i) { return xScale(years[i]) })
     .y0(function(d) { return yScale(d[0]) })
     .y1(function(d) { return yScale(d[1]) })
     .curve(d3.curveCatmullRom)
 
-  // Draw streams
-  series.forEach(function(s) {
+  // Y-axis gridlines (subtle)
+  var yTicks = yScale.ticks(4)
+  yTicks.forEach(function(tick) {
+    g.append('line')
+      .attr('x1', 0).attr('x2', iW)
+      .attr('y1', yScale(tick)).attr('y2', yScale(tick))
+      .attr('stroke', 'rgba(255,255,255,0.06)')
+      .attr('stroke-width', 0.5)
+  })
+
+  // Draw streams with animated reveal
+  series.forEach(function(s, si) {
     var dtype = s.key
     var meta  = DTYPE_META[dtype]
 
-    g.append('path')
+    var path = g.append('path')
       .datum(s)
       .attr('d', area)
       .attr('fill', meta.color)
-      .attr('opacity', 0.75)
+      .attr('opacity', 0)
       .on('mousemove', function(event) {
-        showTooltip(tooltip, tooltipHtml(meta.label, [
+        // Find nearest year
+        var mouseX = d3.pointer(event, g.node())[0]
+        var yearIdx = Math.round((mouseX / iW) * (years.length - 1))
+        yearIdx = Math.max(0, Math.min(years.length - 1, yearIdx))
+        var yr = years[yearIdx]
+        var row = matrix[yearIdx]
+        var val = row[dtype]
+        var total = DTYPES.reduce(function(sum, dt) { return sum + row[dt] }, 0)
+        showTooltip(tooltip, tooltipHtml(meta.label + ' — ' + yr, [
+          ['Affected', val > 0 ? fmtNum(val) : '0'],
+          ['Share of Year', total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%'],
+          ['Total All Types', fmtNum(total)],
           ['Category', meta.category],
-          ['Hover a pulse for year detail', ''],
         ]), event)
         d3.select(this).attr('opacity', 1)
       })
       .on('mouseleave', function() {
         hideTooltip(tooltip)
-        d3.select(this).attr('opacity', 0.75)
+        d3.select(this).attr('opacity', 0.78)
       })
+
+    // Animate in
+    path.transition()
+      .duration(600)
+      .delay(si * 60)
+      .ease(d3.easeCubicOut)
+      .attr('opacity', 0.78)
   })
 
   // X axis
   g.append('g').attr('transform', 'translate(0,' + iH + ')')
     .call(d3.axisBottom(xScale).ticks(years.length > 10 ? 8 : years.length).tickFormat(d3.format('d')))
     .call(function(ax) { ax.select('.domain').remove() })
-    .call(function(ax) { ax.selectAll('text').attr('fill', '#6B7280').attr('font-size', 9) })
+    .call(function(ax) { ax.selectAll('text').attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9) })
+    .call(function(ax) { ax.selectAll('line').attr('stroke', 'rgba(255,255,255,0.1)') })
+
+  // Y-axis: show scale in human-readable units
+  var yAxisFormat = maxTotal >= 1e6
+    ? function(v) {
+        // Convert from stacked domain back to people
+        var range = yExtent[1] - yExtent[0]
+        var pct = (v - yExtent[0]) / range
+        var people = pct * maxTotal
+        if (people >= 1e6) return (people / 1e6).toFixed(1) + 'M'
+        if (people >= 1e3) return (people / 1e3).toFixed(0) + 'K'
+        return people.toFixed(0)
+      }
+    : function(v) {
+        var range = yExtent[1] - yExtent[0]
+        var pct = (v - yExtent[0]) / range
+        var people = pct * maxTotal
+        if (people >= 1e3) return (people / 1e3).toFixed(0) + 'K'
+        return people.toFixed(0)
+      }
+
+  // Reference scale bar (top-right) — "▌= X people affected"
+  var refBarH = iH * 0.3
+  var refPeople = maxTotal * 0.3  // 30% of max
+  var refLabel = refPeople >= 1e6
+    ? (refPeople / 1e6).toFixed(1) + 'M'
+    : refPeople >= 1e3
+      ? (refPeople / 1e3).toFixed(0) + 'K'
+      : refPeople.toFixed(0)
+
+  // Scale reference bar
+  var refX = iW - 8
+  var refY1 = iH * 0.15
+  var refY2 = refY1 + refBarH
+
+  g.append('line')
+    .attr('x1', refX).attr('x2', refX)
+    .attr('y1', refY1).attr('y2', refY2)
+    .attr('stroke', 'rgba(255,255,255,0.5)')
+    .attr('stroke-width', 2)
+    .attr('stroke-linecap', 'round')
+
+  // Top tick
+  g.append('line')
+    .attr('x1', refX - 4).attr('x2', refX + 4)
+    .attr('y1', refY1).attr('y2', refY1)
+    .attr('stroke', 'rgba(255,255,255,0.5)')
+    .attr('stroke-width', 1.5)
+
+  // Bottom tick
+  g.append('line')
+    .attr('x1', refX - 4).attr('x2', refX + 4)
+    .attr('y1', refY2).attr('y2', refY2)
+    .attr('stroke', 'rgba(255,255,255,0.5)')
+    .attr('stroke-width', 1.5)
+
+  // Label
+  g.append('text')
+    .attr('x', refX - 8).attr('y', (refY1 + refY2) / 2)
+    .attr('text-anchor', 'end')
+    .attr('dominant-baseline', 'middle')
+    .attr('fill', 'rgba(255,255,255,0.45)')
+    .attr('font-size', 8.5)
+    .attr('font-weight', '600')
+    .text('≈ ' + refLabel)
+
+  g.append('text')
+    .attr('x', refX - 8).attr('y', (refY1 + refY2) / 2 + 11)
+    .attr('text-anchor', 'end')
+    .attr('fill', 'rgba(255,255,255,0.25)')
+    .attr('font-size', 7)
+    .text('affected')
+
+  // Peak year annotation — find the year with max total affected
+  var peakIdx = 0
+  var peakTotal = 0
+  matrix.forEach(function(row, i) {
+    var total = DTYPES.reduce(function(sum, dtype) { return sum + row[dtype] }, 0)
+    if (total > peakTotal) { peakTotal = total; peakIdx = i }
+  })
+
+  if (peakTotal > 0) {
+    var peakX = xScale(years[peakIdx])
+    // Draw a subtle vertical line at peak
+    g.append('line')
+      .attr('x1', peakX).attr('x2', peakX)
+      .attr('y1', 0).attr('y2', iH)
+      .attr('stroke', 'rgba(255,255,255,0.15)')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '3,3')
+
+    var peakLabel = peakTotal >= 1e6
+      ? (peakTotal / 1e6).toFixed(1) + 'M'
+      : (peakTotal / 1e3).toFixed(0) + 'K'
+
+    g.append('text')
+      .attr('x', peakX).attr('y', -12)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'rgba(255,255,255,0.5)')
+      .attr('font-size', 8)
+      .attr('font-weight', '600')
+      .text('▲ Peak: ' + peakLabel + ' (' + years[peakIdx] + ')')
+  }
 
   // Gender Resilience Checkpoint pulses
   countryData.forEach(function(rec) {
@@ -581,7 +795,7 @@ function drawStreamgraph(countryData, iso) {
             ['Gender Gap Score', rec.gender_gap.toFixed(3)],
             ['Political Empowerment', rec.political_empowerment ? rec.political_empowerment.toFixed(3) : 'N/A'],
             ['Dominant Disaster', domDtype ? DTYPE_META[domDtype].label : 'N/A'],
-            ['Total Affected', rec.total_affected.toLocaleString()],
+            ['Total Affected', fmtNum(rec.total_affected)],
             ['SDRS', rec.sdrs ? rec.sdrs.toFixed(3) : 'N/A'],
           ]
         ), event)
@@ -593,28 +807,29 @@ function drawStreamgraph(countryData, iso) {
       })
   })
 
-  // Stream legend
+  // Stream legend — placed below the chart in bottom margin
+  var legendY = H - 12
   var legendX = 0
   DTYPES.forEach(function(dtype) {
     var meta = DTYPE_META[dtype]
     var lw = meta.label.length * 6 + 20
 
     svg.append('rect')
-      .attr('x', margin.left + legendX).attr('y', 6)
+      .attr('x', margin.left + legendX).attr('y', legendY - 10)
       .attr('width', 10).attr('height', 10).attr('rx', 2)
       .attr('fill', meta.color)
 
     svg.append('text')
-      .attr('x', margin.left + legendX + 13).attr('y', 14)
-      .attr('fill', '#6B7280').attr('font-size', 9)
+      .attr('x', margin.left + legendX + 13).attr('y', legendY - 2)
+      .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9)
       .text(meta.label)
 
     legendX += lw
   })
 
   // Pulse legend
-  svg.append('circle').attr('cx', margin.left + legendX + 6).attr('cy', 11).attr('r', 4)
+  svg.append('circle').attr('cx', margin.left + legendX + 6).attr('cy', legendY - 5).attr('r', 4)
     .attr('fill', '#fff').attr('stroke', '#E8614A').attr('stroke-width', 1.5)
-  svg.append('text').attr('x', margin.left + legendX + 14).attr('y', 14)
-    .attr('fill', '#6B7280').attr('font-size', 9).text('Gender Checkpoint')
+  svg.append('text').attr('x', margin.left + legendX + 14).attr('y', legendY - 2)
+    .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9).text('Gender Checkpoint')
 }

@@ -5,12 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>She Displaced — Gendered Climate Displacement Risk</title>
   <meta name="description" content="An interactive data visualization mapping where climate hazards intersect with gender inequality to predict displacement risk for women worldwide." />
+  <meta property="og:title" content="She Displaced — Gendered Climate Displacement Risk" />
+  <meta property="og:description" content="The first composite index mapping where climate vulnerability intersects with gender inequality across 159 countries." />
+  <meta property="og:url" content="https://she-displaced.vercel.app" />
+  <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+
+  <!-- Skip link for keyboard users -->
+  <a href="#section-map" class="skip-link">Skip to main content</a>
 
   <!-- ============================================================
        TOP NAVIGATION — Contextual Progress Header
@@ -100,7 +107,7 @@
       <div class="hero-stats">
         <div class="stat"><span class="stat-num" id="stat-countries">159</span><span class="stat-label">Countries Scored</span></div>
         <div class="stat"><span class="stat-num" id="stat-years">20</span><span class="stat-label">Years of Data</span></div>
-        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk</span></div>
+        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk<span class="stat-asterisk" title="High Risk = SDRS ≥ 0.55 in 2025. These countries score in the top quintile of the She Displacement Risk Score, indicating compounding climate vulnerability and gender inequality.">*</span></span></div>
       </div>
       <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth'})">
         Explore the Data ↓
@@ -149,14 +156,13 @@
         <input type="range" id="map-year-slider" min="2006" max="2025" value="2025" step="1" />
       </div>
     </div>
-    <div id="world-map-container">
-      <div id="world-map"></div>
-      <div id="map-tooltip" class="tooltip hidden"></div>
-      <div id="map-legend"></div>
-    </div>
-    <div id="map-insight" class="insight-box">
-      <span class="insight-icon">💡</span>
-      <span id="map-insight-text">Toggle between layers to see how gender inequality amplifies climate risk.</span>
+    <div id="world-map-layout">
+      <div id="world-map-container">
+        <div id="world-map"></div>
+        <div id="map-tooltip" class="tooltip hidden"></div>
+        <div id="map-legend"></div>
+      </div>
+      <aside id="map-insight" class="map-insight-card"></aside>
     </div>
   </section>
 
@@ -180,12 +186,6 @@
         <label>Year: <span id="gender-year-label">2025</span></label>
         <input type="range" id="gender-year-slider" min="2006" max="2025" value="2025" step="1" />
       </div>
-      <div class="gender-legend-row">
-        <span class="gl-item coral-dot">Coral line — gender amplifies risk (rank jumped ▲)</span>
-        <span class="gl-item teal-dot">Teal line — climate hazard dominates</span>
-        <span class="gl-sep">·</span>
-        <span class="gl-item">Delta bar: <span style="color:#F4957F">coral</span> = gender-driven &nbsp;|&nbsp; <span style="color:#2AADAD">teal</span> = climate-driven</span>
-      </div>
     </div>
 
     <!-- Two-column charts -->
@@ -198,6 +198,10 @@
           <span class="panel-title">The Gender Penalty</span>
           <span class="panel-sub">Left = vulnerability rank · Right = SDRS rank after adding gender</span>
         </div>
+        <div class="panel-legend">
+          <span class="pl-item"><span class="pl-swatch coral-line"></span>Top 7 movers — gender amplifies risk most</span>
+          <span class="pl-item"><span class="pl-swatch gray-line"></span>Other countries in top 20</span>
+        </div>
         <div id="slope-chart"></div>
         <div id="slope-tooltip" class="tooltip hidden"></div>
       </div>
@@ -208,6 +212,9 @@
           <span class="panel-tag">Delta Score</span>
           <span class="panel-title">Gender Displacement Delta</span>
           <span class="panel-sub">SDRS − Climate Vulnerability · How much gender adds to risk</span>
+        </div>
+        <div class="panel-legend">
+          <span class="pl-item"><span class="pl-swatch delta-gradient"></span>Bar color intensifies with stronger gender-driven risk</span>
         </div>
         <div id="delta-chart"></div>
         <div id="delta-tooltip" class="tooltip hidden"></div>
@@ -255,11 +262,6 @@
     <div id="radar-view-continental" class="radar-view active">
       <div id="continental-grid"></div>
       <div id="continental-tooltip" class="tooltip hidden"></div>
-      <div class="radar-gallery-legend">
-        <span class="rgl-item"><span class="rgl-swatch" style="background:rgba(42,173,173,0.35)"></span>Regional average risk profile</span>
-        <span class="rgl-sep">·</span>
-        <span class="rgl-note">Hover any axis dot for details · All axes fixed 0→1 for cross-region comparison</span>
-      </div>
     </div>
 
     <!-- LEVEL 2: Country Comparison -->
@@ -387,7 +389,7 @@
         <div class="panel-label">
           <span class="panel-tag">Genetic Makeup</span>
           <span class="panel-title">What Threatens Her</span>
-          <span class="panel-sub">The composition of climate hazards by type and scale. Slice width = people affected (log-compressed).</span>
+          <span class="panel-sub">Each of the 100 cells represents 1% of the affected population. The pattern is this country's climate DNA.</span>
         </div>
         <div id="sunburst-chart"></div>
         <div id="sunburst-tooltip" class="tooltip hidden"></div>
@@ -397,7 +399,7 @@
         <div class="panel-label">
           <span class="panel-tag">Catastrophe Matrix</span>
           <span class="panel-title">How Bad It Gets</span>
-          <span class="panel-sub">Each dot is one year. Where deaths are low but millions are displaced — that's the silent crisis erasing women's futures.</span>
+          <span class="panel-sub">Each dot is one year · Axes use log scale · Quadrants split at this country's median event. Where deaths are low but millions are displaced — that's the silent crisis.</span>
         </div>
         <div id="lethality-chart"></div>
         <div id="lethality-tooltip" class="tooltip hidden"></div>
@@ -432,26 +434,52 @@
 
     <div class="bubble-controls">
       <div class="view-mode-toggle">
-        <button class="vm-btn active" id="vm-world" data-mode="world">🌍 World View</button>
-        <button class="vm-btn" id="vm-country" data-mode="country">📍 Country Focus</button>
+        <button class="vm-btn active" id="vm-world" data-mode="world">World View</button>
+        <button class="vm-btn" id="vm-country" data-mode="country">Country Focus</button>
       </div>
-      <div class="year-control" style="color:rgba(255,255,255,0.6)">
-        <label>Year: <span id="bubble-year-display">2006</span></label>
-        <input type="range" id="bubble-year-slider" min="2006" max="2025" value="2006" step="1" />
+
+      <!-- Cinematic timeline control -->
+      <div class="bubble-timeline">
+        <button id="bubble-play" class="play-btn-circle" aria-label="Play timeline">
+          <svg class="play-icon" viewBox="0 0 24 24" width="14" height="14">
+            <polygon points="6,4 20,12 6,20" fill="currentColor"/>
+          </svg>
+          <svg class="pause-icon" viewBox="0 0 24 24" width="14" height="14" style="display:none">
+            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+          </svg>
+          <svg class="play-progress" viewBox="0 0 36 36">
+            <circle class="play-progress-bg" cx="18" cy="18" r="16" fill="none" stroke-width="2"/>
+            <circle class="play-progress-fg" cx="18" cy="18" r="16" fill="none" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="timeline-track">
+          <div class="timeline-year-display">
+            <span class="tyd-label">YEAR</span>
+            <span class="tyd-value" id="bubble-year-display">2006</span>
+          </div>
+          <div class="timeline-slider-wrap">
+            <div class="timeline-progress-fill" id="timeline-progress-fill"></div>
+            <input type="range" id="bubble-year-slider" class="timeline-slider" min="2006" max="2025" value="2006" step="1" />
+            <div class="timeline-ticks">
+              <span>2006</span>
+              <span>2010</span>
+              <span>2015</span>
+              <span>2020</span>
+              <span>2025</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <button id="bubble-play" class="play-btn">▶ Play</button>
+
       <div id="country-focus-controls" class="country-focus-controls hidden">
         <div class="bubble-country-group">
           <input type="text" id="bubble-country-input" placeholder="Search country…" autocomplete="off" />
           <div id="bubble-country-dropdown" class="country-dropdown hidden"></div>
         </div>
-        <button id="bubble-clear-country" class="action-btn secondary" style="font-size:12px;padding:6px 12px">✕ Reset</button>
       </div>
-      <div id="velocity-legend" class="bubble-velocity-legend">
-        <span class="vel-item"><span class="vel-dot" style="background:#C0392B"></span>Risk rising</span>
-        <span class="vel-item"><span class="vel-dot" style="background:#9CA3AF"></span>Stable</span>
-        <span class="vel-item"><span class="vel-dot" style="background:#0D9488"></span>Improving</span>
-      </div>
+      <div id="velocity-legend" class="bubble-velocity-legend" style="display:none"></div>
     </div>
 
     <div id="master-detail-layout">
@@ -507,25 +535,21 @@
 
           <div class="lab-slider-group">
             <div class="lab-slider-row">
-              <span class="lab-slider-icon">🌊</span>
               <span class="lab-slider-label">Climate Vulnerability</span>
               <input type="range" class="lab-slider" id="weight-climate" min="0" max="1" value="0.30" step="0.01" />
               <span class="lab-slider-val" id="weight-climate-val">0.30</span>
             </div>
             <div class="lab-slider-row">
-              <span class="lab-slider-icon">⚡</span>
               <span class="lab-slider-label">Adaptive Capacity Gap</span>
               <input type="range" class="lab-slider" id="weight-adaptive" min="0" max="1" value="0.20" step="0.01" />
               <span class="lab-slider-val" id="weight-adaptive-val">0.20</span>
             </div>
             <div class="lab-slider-row">
-              <span class="lab-slider-icon">♀</span>
               <span class="lab-slider-label">Gender Penalty</span>
               <input type="range" class="lab-slider" id="weight-gender" min="0" max="1" value="0.35" step="0.01" />
               <span class="lab-slider-val" id="weight-gender-val">0.35</span>
             </div>
             <div class="lab-slider-row">
-              <span class="lab-slider-icon">🌪</span>
               <span class="lab-slider-label">Disaster Burden</span>
               <input type="range" class="lab-slider" id="weight-disaster" min="0" max="1" value="0.15" step="0.01" />
               <span class="lab-slider-val" id="weight-disaster-val">0.15</span>
@@ -611,20 +635,20 @@
       <p class="closing-sub">A risk that's measurable. And preventable.</p>
       <div class="closing-stats">
         <div class="c-stat">
-          <div class="c-num">30%</div>
-          <div class="c-label">Climate Vulnerability (normalized)</div>
+          <div class="c-num">159</div>
+          <div class="c-label">Countries Scored</div>
         </div>
         <div class="c-stat">
-          <div class="c-num">35%</div>
-          <div class="c-label">Gender Inequality — the multiplier</div>
+          <div class="c-num">150M</div>
+          <div class="c-label">Women at Risk</div>
         </div>
         <div class="c-stat">
-          <div class="c-num">20%</div>
-          <div class="c-label">Adaptive Capacity Gap</div>
+          <div class="c-num">29</div>
+          <div class="c-label">In Compounding Crisis</div>
         </div>
         <div class="c-stat">
-          <div class="c-num">15%</div>
-          <div class="c-label">Disaster Burden (log-compressed)</div>
+          <div class="c-num">15</div>
+          <div class="c-label">Resilience Champions</div>
         </div>
       </div>
       <p class="closing-credit">Built for Data Connect Conference · Women in Analytics 2026</p>
@@ -645,21 +669,21 @@
         <div class="sidebar-title">Datasets</div>
         <div class="dataset-list">
           <button class="dataset-btn active" data-dataset="sdrs">
-            <span class="ds-icon">⬡</span>
+            <span class="ds-icon">◆</span>
             <span class="ds-info">
               <span class="ds-name">SDRS Index</span>
               <span class="ds-desc">She Displacement Risk Score — composite index with all components</span>
             </span>
           </button>
           <button class="dataset-btn" data-dataset="vulnerability">
-            <span class="ds-icon">🌊</span>
+            <span class="ds-icon">▲</span>
             <span class="ds-info">
               <span class="ds-name">Climate Vulnerability</span>
               <span class="ds-desc">ND-GAIN vulnerability sub-dimensions: food, water, health, habitat, exposure</span>
             </span>
           </button>
           <button class="dataset-btn" data-dataset="gender">
-            <span class="ds-icon">♀</span>
+            <span class="ds-icon">●</span>
             <span class="ds-info">
               <span class="ds-name">Gender Gap Index</span>
               <span class="ds-desc">WEF sub-indices: economic participation, political empowerment, education, health</span>
@@ -894,21 +918,39 @@
             <div class="source-card">
               <div class="source-name">ND-GAIN Country Index</div>
               <div class="source-org">Notre Dame Global Adaptation Initiative</div>
-              <div class="source-desc">Annual vulnerability and readiness scores for 182 countries, 1995–2023. Peer-reviewed methodology combining 45 indicators across 6 life sectors.</div>
+              <div class="source-desc">Annual vulnerability and readiness scores for 182 countries, 1995–2023. For 2024–2025, the Last Observation Carried Forward (LOCF) approach was applied — 2023 values are held constant. Peer-reviewed methodology combining 45 indicators across 6 life sectors.</div>
               <div class="source-cols"><strong>Columns used:</strong> vulnerability, readiness, and all sub-dimensions</div>
             </div>
             <div class="source-card">
               <div class="source-name">Global Gender Gap Report</div>
               <div class="source-org">World Economic Forum</div>
-              <div class="source-desc">Annual gender parity index for 146+ countries, 2006–2023. Covers economic, political, educational, and health dimensions.</div>
+              <div class="source-desc">Annual gender parity index for 146+ countries, 2006–2025. Covers economic, political, educational, and health dimensions. Data available through 2025.</div>
               <div class="source-cols"><strong>Columns used:</strong> Overall score, economic participation, political empowerment, educational attainment, health &amp; survival</div>
             </div>
             <div class="source-card">
               <div class="source-name">EM-DAT International Disaster Database</div>
               <div class="source-org">Centre for Research on the Epidemiology of Disasters</div>
-              <div class="source-desc">Global database of natural and technological disasters since 1900. Used for total deaths, total affected, and disaster count per country-year.</div>
+              <div class="source-desc">Global database of natural and technological disasters since 1900. Climate disaster data available through 2025. Used for total deaths, total affected, and disaster count per country-year.</div>
               <div class="source-cols"><strong>Columns used:</strong> Total Deaths, Total Affected, Disaster count</div>
             </div>
+          </div>
+
+          <!-- Data Vintage & Forward-Filling -->
+          <div class="weight-rationale" style="margin-top:24px;border-left-color:var(--amber)">
+            <h3>Data Vintage &amp; Forward-Filling (2024–2025)</h3>
+            <p>
+              The SDRS spans 20 years (2006–2025). Not all source datasets publish at the same cadence:
+            </p>
+            <div class="method-table" style="margin-top:12px">
+              <div class="mt-row header"><span>Component</span><span>Latest Ground-Truth</span><span>2024–2025 Method</span></div>
+              <div class="mt-row"><span>Climate Vulnerability (ND-GAIN)</span><span>2023</span><span>LOCF — 2023 values carried forward</span></div>
+              <div class="mt-row"><span>Adaptive Capacity / Readiness (ND-GAIN)</span><span>2023</span><span>LOCF — 2023 values carried forward</span></div>
+              <div class="mt-row"><span>Gender Gap Index (WEF)</span><span>2025</span><span>Observed — no imputation needed</span></div>
+              <div class="mt-row"><span>Disaster Burden (EM-DAT)</span><span>2025</span><span>Observed — no imputation needed</span></div>
+            </div>
+            <p style="margin-top:12px;font-size:13px">
+              <strong>LOCF (Last Observation Carried Forward)</strong> assumes that a country's climate vulnerability and readiness did not materially change between 2023 and 2025. This is a conservative assumption — structural indicators like infrastructure, governance, and ecosystem sensitivity shift slowly. The Gender Gap and Disaster Burden components use observed 2025 data, ensuring the SDRS still captures recent changes in gender policy and acute climate events.
+            </p>
           </div>
         </div>
       </div>
@@ -919,8 +961,9 @@
         <div class="method-content">
           <h2>Limitations &amp; Caveats</h2>
           <ul class="limitations-list">
-            <li><strong>Equal weighting assumption:</strong> The 35/30/35 weights are theoretically motivated but not empirically derived. Future work could use regression or expert elicitation to calibrate weights.</li>
+            <li><strong>Weight sensitivity:</strong> The 30/20/35/15 weights are theoretically motivated but not empirically derived. The Innovation Lab (Chapter 6) allows users to test alternative weightings and observe how rankings shift.</li>
             <li><strong>Gender Gap Index coverage:</strong> The WEF index is only available from 2006, limiting the full SDRS to 2006–2025 (20 years). Vulnerability and readiness data extends back to 1995.</li>
+            <li><strong>Forward-filling for ND-GAIN:</strong> Climate vulnerability and readiness scores for 2024–2025 use Last Observation Carried Forward (LOCF) from 2023. Structural indicators shift slowly, but this means the SDRS may understate rapid environmental degradation in those years.</li>
             <li><strong>Country-level aggregation:</strong> All scores are national averages. Sub-national variation — which is often where the most vulnerable women live — is not captured.</li>
             <li><strong>Correlation between components:</strong> Climate vulnerability and gender inequality are not independent — poorer countries tend to score worse on both. The SDRS does not attempt to decompose this correlation.</li>
             <li><strong>Displacement as outcome:</strong> The SDRS predicts <em>risk</em> of displacement, not actual displacement. Actual displacement data is fragmented and inconsistently reported globally.</li>

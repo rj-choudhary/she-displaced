@@ -2,16 +2,28 @@ import * as d3 from 'd3'
 import { showTooltip, hideTooltip, tooltipHtml } from './utils.js'
 
 // ── Axes definition ──────────────────────────────────────────
+// Order intentionally groups by sector: climate → readiness → gender
+// This creates contiguous colored wedges in the radar background for easy visual parsing
 export const AXES = [
-  { key: 'vulnerability',         label: 'Climate\nVulnerability',  invert: false },
-  { key: 'gender_penalty',        label: 'Gender\nPenalty',         invert: false },
-  { key: 'adaptive_gap',          label: 'Adaptive\nCapacity Gap',  invert: false },
-  { key: 'vuln_food',             label: 'Food\nInsecurity',        invert: false },
-  { key: 'vuln_water',            label: 'Water\nRisk',             invert: false },
-  { key: 'political_empowerment', label: 'Political\nEmpowerment',  invert: true  },
-  { key: 'econ_participation',    label: 'Economic\nParticipation', invert: true  },
-  { key: 'readiness',             label: 'Readiness',               invert: true  },
+  // Climate sector (3 axes, top)
+  { key: 'vulnerability',         label: 'Climate\nVulnerability',  shortLabel: 'Climate',    invert: false, sector: 'climate' },
+  { key: 'vuln_food',             label: 'Food\nInsecurity',        shortLabel: 'Food',       invert: false, sector: 'climate' },
+  { key: 'vuln_water',            label: 'Water\nRisk',             shortLabel: 'Water',      invert: false, sector: 'climate' },
+  // Readiness sector (2 axes)
+  { key: 'adaptive_gap',          label: 'Adaptive\nGap',           shortLabel: 'Adapt. Gap', invert: false, sector: 'readiness' },
+  { key: 'readiness',             label: 'Readiness',               shortLabel: 'Readiness',  invert: true,  sector: 'readiness' },
+  // Gender sector (3 axes)
+  { key: 'gender_penalty',        label: 'Gender\nPenalty',         shortLabel: 'Gender',     invert: false, sector: 'gender' },
+  { key: 'political_empowerment', label: 'Political\nEmpowerment',  shortLabel: 'Political',  invert: true,  sector: 'gender' },
+  { key: 'econ_participation',    label: 'Economic\nParticipation', shortLabel: 'Economic',   invert: true,  sector: 'gender' },
 ]
+
+// Sector color mapping for background wedges
+const SECTOR_COLORS = {
+  climate:   { fill: 'rgba(42,173,173,0.12)',  stroke: 'rgba(42,173,173,0.3)' },
+  gender:    { fill: 'rgba(232,97,74,0.12)',   stroke: 'rgba(232,97,74,0.3)' },
+  readiness: { fill: 'rgba(232,168,74,0.12)',  stroke: 'rgba(232,168,74,0.3)' },
+}
 
 const RING_LEVELS = [0.25, 0.5, 0.75, 1.0]
 
@@ -136,6 +148,32 @@ export function drawRadarChart(data) {
       grid.appendChild(cell)
       drawSmallRadar(chartDiv, avg, region.color, document.getElementById('continental-tooltip'))
     })
+
+    // 8th cell: "How to Read" legend card
+    var legendCell = document.createElement('div')
+    legendCell.className = 'continental-cell continental-legend-cell'
+    legendCell.innerHTML = [
+      '<div class="rlg-title">How to read</div>',
+      '<div class="rlg-body">',
+      '  <div class="rlg-row">',
+      '    <span class="rlg-sector" style="background:rgba(42,173,173,0.35); border-color:rgba(42,173,173,0.6)"></span>',
+      '    <span class="rlg-label">Climate</span>',
+      '    <span class="rlg-desc">Vulnerability, food, water</span>',
+      '  </div>',
+      '  <div class="rlg-row">',
+      '    <span class="rlg-sector" style="background:rgba(232,97,74,0.35); border-color:rgba(232,97,74,0.6)"></span>',
+      '    <span class="rlg-label">Gender</span>',
+      '    <span class="rlg-desc">Penalty, political, economic</span>',
+      '  </div>',
+      '  <div class="rlg-row">',
+      '    <span class="rlg-sector" style="background:rgba(232,168,74,0.35); border-color:rgba(232,168,74,0.6)"></span>',
+      '    <span class="rlg-label">Readiness</span>',
+      '    <span class="rlg-desc">Adaptive gap, readiness</span>',
+      '  </div>',
+      '</div>',
+      '<div class="rlg-hint">Larger polygon = higher combined risk · axes fixed 0→1</div>',
+    ].join('')
+    grid.appendChild(legendCell)
   }
 
   function renderCountry() {
@@ -153,10 +191,10 @@ export function drawRadarChart(data) {
 
 // ── Small radar for continental gallery ──────────────────────
 function drawSmallRadar(container, rec, color, tooltip) {
-  var size = 200
+  var size = 220
   var cx = size / 2
   var cy = size / 2
-  var R  = size * 0.33
+  var R  = size * 0.30
   var n  = AXES.length
   var step = (2 * Math.PI) / n
 
@@ -166,14 +204,35 @@ function drawSmallRadar(container, rec, color, tooltip) {
     .attr('width', '100%')
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
+  // Colored sector wedges (background)
+  var sectorR = R + 6
+  AXES.forEach(function(ax, i) {
+    var sc = SECTOR_COLORS[ax.sector]
+    var startAngle = i * step - Math.PI / 2 - step / 2
+    var endAngle = startAngle + step
+
+    var arc = d3.arc()
+      .innerRadius(0)
+      .outerRadius(sectorR)
+      .startAngle(startAngle + Math.PI / 2)  // d3.arc uses 12-o'clock as 0
+      .endAngle(endAngle + Math.PI / 2)
+
+    svg.append('path')
+      .attr('transform', 'translate(' + cx + ',' + cy + ')')
+      .attr('d', arc)
+      .attr('fill', sc.fill)
+      .attr('stroke', sc.stroke)
+      .attr('stroke-width', 0.5)
+  })
+
   // Background rings
   RING_LEVELS.forEach(function(r) {
     var pts = makeRingPoints(cx, cy, R, r, n, step)
     svg.append('polygon')
       .attr('points', pts.map(function(p) { return p.join(',') }).join(' '))
       .attr('fill', 'none')
-      .attr('stroke', 'rgba(255,255,255,0.08)')
-      .attr('stroke-width', 0.6)
+      .attr('stroke', 'rgba(255,255,255,0.1)')
+      .attr('stroke-width', 0.5)
   })
 
   // Axis spokes
@@ -183,8 +242,8 @@ function drawSmallRadar(container, rec, color, tooltip) {
       .attr('x1', cx).attr('y1', cy)
       .attr('x2', cx + R * Math.cos(a))
       .attr('y2', cy + R * Math.sin(a))
-      .attr('stroke', 'rgba(255,255,255,0.08)')
-      .attr('stroke-width', 0.6)
+      .attr('stroke', 'rgba(255,255,255,0.1)')
+      .attr('stroke-width', 0.5)
   })
 
   var vals = axisVals(rec)
@@ -202,25 +261,26 @@ function drawSmallRadar(container, rec, color, tooltip) {
     .attr('stroke', color)
     .attr('stroke-width', 1.5)
 
-  // Axis labels
+  // Axis labels — use short single-line labels to avoid clipping
   AXES.forEach(function(ax, i) {
     var a  = i * step - Math.PI / 2
-    var lx = cx + (R + 18) * Math.cos(a)
-    var ly = cy + (R + 18) * Math.sin(a)
-    var lines = ax.label.split('\n')
-    var t = svg.append('text')
+    var lx = cx + (R + 22) * Math.cos(a)
+    var ly = cy + (R + 22) * Math.sin(a)
+
+    // Sector-based label color
+    var labelColor = ax.sector === 'climate' ? 'rgba(42,173,173,0.85)'
+      : ax.sector === 'gender' ? 'rgba(244,149,127,0.85)'
+      : 'rgba(232,168,74,0.85)'
+
+    svg.append('text')
       .attr('x', lx).attr('y', ly)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
-      .attr('fill', 'rgba(255,255,255,0.4)')
-      .attr('font-size', 7)
+      .attr('fill', labelColor)
+      .attr('font-size', 9)
+      .attr('font-weight', '600')
       .attr('font-family', 'Inter, sans-serif')
-    lines.forEach(function(line, li) {
-      t.append('tspan')
-        .attr('x', lx)
-        .attr('dy', li === 0 ? (lines.length > 1 ? '-0.45em' : '0') : '1em')
-        .text(line)
-    })
+      .text(ax.shortLabel)
   })
 
   // Hover dots
@@ -248,7 +308,9 @@ function drawSmallRadar(container, rec, color, tooltip) {
 }
 
 // ── Full-size radar for country comparison ────────────────────
-export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec) {
+export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec, opts) {
+  opts = opts || {}
+  var showBadge = opts.showBadge !== false  // default true
   var container = document.getElementById(containerId)
   container.innerHTML = ''
 
@@ -257,18 +319,51 @@ export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec) {
     return
   }
 
+  // Title above the radar
+  var titleEl = document.createElement('div')
+  titleEl.className = 'radar-country-title'
+  titleEl.style.color = color
+  titleEl.textContent = rec.name
+  container.appendChild(titleEl)
+
+  // Radar SVG wrapper
+  var svgWrap = document.createElement('div')
+  svgWrap.className = 'radar-svg-wrap'
+  container.appendChild(svgWrap)
+
   var size = 400
   var cx = size / 2
   var cy = size / 2
-  var R  = size * 0.34
+  var R  = size * 0.32
   var n  = AXES.length
   var step = (2 * Math.PI) / n
 
-  var svg = d3.select(container)
+  var svg = d3.select(svgWrap)
     .append('svg')
     .attr('viewBox', '0 0 ' + size + ' ' + size)
     .attr('width', '100%')
     .attr('preserveAspectRatio', 'xMidYMid meet')
+
+  // Colored sector wedges (background)
+  var sectorR = R + 8
+  AXES.forEach(function(ax, i) {
+    var sc = SECTOR_COLORS[ax.sector]
+    var startAngle = i * step - Math.PI / 2 - step / 2
+    var endAngle = startAngle + step
+
+    var arc = d3.arc()
+      .innerRadius(0)
+      .outerRadius(sectorR)
+      .startAngle(startAngle + Math.PI / 2)
+      .endAngle(endAngle + Math.PI / 2)
+
+    svg.append('path')
+      .attr('transform', 'translate(' + cx + ',' + cy + ')')
+      .attr('d', arc)
+      .attr('fill', sc.fill)
+      .attr('stroke', sc.stroke)
+      .attr('stroke-width', 0.6)
+  })
 
   // Background rings
   RING_LEVELS.forEach(function(r) {
@@ -301,19 +396,39 @@ export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec) {
       .attr('stroke-width', 0.8)
   })
 
-  // Ghost layer: regional average
+  // Ghost layer: regional average — dark dashed outline with amber glow (light bg friendly)
   if (ghostRec) {
     var ghostVals = axisVals(ghostRec)
     var ghostPts  = ghostVals.map(function(v, i) {
       var a = i * step - Math.PI / 2
       return [cx + R * v * Math.cos(a), cy + R * v * Math.sin(a)]
     })
+
+    // Soft warm glow underneath — amber tint
     svg.append('polygon')
       .attr('points', ghostPts.map(function(p) { return p.join(',') }).join(' '))
-      .attr('fill', 'rgba(255,255,255,0.04)')
-      .attr('stroke', 'rgba(255,255,255,0.25)')
-      .attr('stroke-width', 1.2)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(232,168,74,0.3)')
+      .attr('stroke-width', 5)
+      .attr('stroke-linejoin', 'round')
+
+    // Main dashed ghost line — ink-dark, architectural reference
+    svg.append('polygon')
+      .attr('points', ghostPts.map(function(p) { return p.join(',') }).join(' '))
+      .attr('fill', 'rgba(26,26,46,0.03)')
+      .attr('stroke', 'rgba(26,26,46,0.55)')
+      .attr('stroke-width', 1.5)
       .attr('stroke-dasharray', '4,3')
+      .attr('stroke-linejoin', 'round')
+
+    // Ghost vertex markers — small amber-ringed dots
+    ghostPts.forEach(function(pt) {
+      svg.append('circle')
+        .attr('cx', pt[0]).attr('cy', pt[1]).attr('r', 2.5)
+        .attr('fill', 'rgba(232,168,74,0.9)')
+        .attr('stroke', 'rgba(26,26,46,0.6)')
+        .attr('stroke-width', 0.8)
+    })
   }
 
   // Country polygon
@@ -358,18 +473,24 @@ export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec) {
       .on('mouseleave', function() { hideTooltip(tooltip) })
   })
 
-  // Axis labels
+  // Axis labels — sector-colored
   AXES.forEach(function(ax, i) {
     var a  = i * step - Math.PI / 2
-    var lx = cx + (R + 30) * Math.cos(a)
-    var ly = cy + (R + 30) * Math.sin(a)
+    var lx = cx + (R + 34) * Math.cos(a)
+    var ly = cy + (R + 34) * Math.sin(a)
     var lines = ax.label.split('\n')
+
+    var labelColor = ax.sector === 'climate' ? 'rgba(42,173,173,0.85)'
+      : ax.sector === 'gender' ? 'rgba(244,149,127,0.85)'
+      : 'rgba(232,168,74,0.85)'
+
     var t = svg.append('text')
       .attr('x', lx).attr('y', ly)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
-      .attr('fill', 'rgba(255,255,255,0.55)')
-      .attr('font-size', 9)
+      .attr('fill', labelColor)
+      .attr('font-size', 11)
+      .attr('font-weight', '600')
       .attr('font-family', 'Inter, sans-serif')
     lines.forEach(function(line, li) {
       t.append('tspan')
@@ -379,30 +500,16 @@ export function drawSingleRadar(containerId, rec, color, tooltip, ghostRec) {
     })
   })
 
-  // Center labels
-  svg.append('text')
-    .attr('x', cx).attr('y', cy - 12)
-    .attr('text-anchor', 'middle')
-    .attr('fill', color)
-    .attr('font-size', 13)
-    .attr('font-weight', '600')
-    .attr('font-family', 'Playfair Display, serif')
-    .text(rec.name.length > 16 ? rec.name.slice(0, 14) + '\u2026' : rec.name)
-
-  svg.append('text')
-    .attr('x', cx).attr('y', cy + 4)
-    .attr('text-anchor', 'middle')
-    .attr('fill', 'rgba(255,255,255,0.5)')
-    .attr('font-size', 10)
-    .text('SDRS: ' + rec.sdrs.toFixed(3))
-
-  if (ghostRec) {
-    svg.append('text')
-      .attr('x', cx).attr('y', cy + 18)
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'rgba(255,255,255,0.28)')
-      .attr('font-size', 8.5)
-      .text(rec.region + ' avg: ' + ghostRec.sdrs.toFixed(3))
+  // Badge below the radar (SDRS + regional avg)
+  if (showBadge) {
+    var badge = document.createElement('div')
+    badge.className = 'radar-country-badge'
+    var badgeHtml = '<span class="rcb-main" style="color:' + color + '">SDRS ' + rec.sdrs.toFixed(3) + '</span>'
+    if (ghostRec) {
+      badgeHtml += '<span class="rcb-sep">·</span><span class="rcb-sub">' + rec.region + ' avg ' + ghostRec.sdrs.toFixed(3) + '</span>'
+    }
+    badge.innerHTML = badgeHtml
+    container.appendChild(badge)
   }
 }
 

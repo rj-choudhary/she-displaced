@@ -5,24 +5,36 @@ import { showTooltip, moveTooltip, hideTooltip, tooltipHtml, getDataForYear } fr
 const LAYER_CONFIG = {
   sdrs: {
     label: 'She Displacement Risk Score',
+    shortLabel: 'SDRS',
+    accent: '#E8614A',
+    tag: 'Combined Risk',
     accessor: d => d.sdrs,
     colorRange: ['#fef3f0', '#f4957f', '#e8614a', '#c0392b', '#7b1a0e'],
     domain: [0.2, 0.65],
-    insight: (top3) => `Gender inequality amplifies climate risk. ${top3} face the highest combined displacement risk for women.`
+    headline: 'Gender inequality amplifies climate risk.',
+    caption: 'These 3 countries face the highest combined displacement risk for women.',
   },
   vulnerability: {
     label: 'Climate Vulnerability',
+    shortLabel: 'Climate',
+    accent: '#2AADAD',
+    tag: 'Climate Layer',
     accessor: d => d.vulnerability,
     colorRange: ['#f0fafa', '#7dd3d3', '#2aadad', '#1a7a7a', '#0d4f4f'],
     domain: [0.2, 0.75],
-    insight: (top3) => `Climate vulnerability alone. Compare with SDRS to see how gender changes the picture.`
+    headline: 'Climate vulnerability alone — without the gender lens.',
+    caption: 'Most physically exposed to floods, drought, storms, and heat.',
   },
   gender_penalty: {
     label: 'Gender Penalty (1 − Gender Gap Score)',
+    shortLabel: 'Gender',
+    accent: '#9b59b6',
+    tag: 'Gender Layer',
     accessor: d => d.gender_penalty,
-    colorRange: ['#fefbf0', '#f5d08a', '#e8a84a', '#c07a1a', '#7a4a00'],
+    colorRange: ['#f5f0fa', '#c8a8e0', '#9b59b6', '#6a3093', '#3b1464'],
     domain: [0.1, 0.65],
-    insight: (top3) => `Where gender inequality is highest. ${top3} have the largest gender penalty amplifying climate risk.`
+    headline: 'Where gender inequality is structurally deepest.',
+    caption: 'Highest gender penalty — a multiplier on every climate event.',
   }
 }
 
@@ -30,7 +42,6 @@ export async function drawWorldMap(data) {
   const container = document.getElementById('world-map')
   const tooltip   = document.getElementById('map-tooltip')
   const legend    = document.getElementById('map-legend')
-  const insightEl = document.getElementById('map-insight-text')
   const yearSlider = document.getElementById('map-year-slider')
   const yearLabel  = document.getElementById('map-year-label')
 
@@ -64,8 +75,8 @@ export async function drawWorldMap(data) {
     .attr('viewBox', `0 0 ${W} ${H}`)
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
-  const projection = d3.geoNaturalEarth1()
-    .scale(W / 6.3)
+  const projection = d3.geoEqualEarth()
+    .scale(W / 5.5)
     .translate([W / 2, H / 2])
 
   const path = d3.geoPath().projection(projection)
@@ -135,11 +146,36 @@ export async function drawWorldMap(data) {
     // Update legend
     renderLegend(cfg, colorScale)
 
-    // Update insight
+    // Update insight — editorial card with top-3 badges
     const yearData = getDataForYear(data, currentYear)
     const sorted = yearData.sort((a, b) => cfg.accessor(b) - cfg.accessor(a))
-    const top3 = sorted.slice(0, 3).map(d => d.name).join(', ')
-    insightEl.textContent = cfg.insight(top3)
+    const top3 = sorted.slice(0, 3)
+
+    const insightContainer = document.getElementById('map-insight')
+    if (insightContainer) {
+      insightContainer.style.setProperty('--layer-accent', cfg.accent)
+      insightContainer.innerHTML = `
+        <div class="mi-tag">${cfg.tag}</div>
+        <div class="mi-year">${currentYear}</div>
+        <h4 class="mi-headline">${cfg.headline}</h4>
+        <p class="mi-caption">${cfg.caption}</p>
+        <div class="mi-divider"></div>
+        <div class="mi-label">Top 3 this year</div>
+        <ol class="mi-top3">
+          ${top3.map((d, i) => `
+            <li class="mi-top-item">
+              <span class="mi-rank">${i + 1}</span>
+              <span class="mi-country">${d.name}</span>
+              <span class="mi-value">${cfg.accessor(d).toFixed(3)}</span>
+            </li>
+          `).join('')}
+        </ol>
+        <div class="mi-footer">
+          <span class="mi-dot" style="background:${cfg.accent}"></span>
+          <span>Viewing: ${cfg.shortLabel}</span>
+        </div>
+      `
+    }
   }
 
   function renderLegend(cfg, colorScale) {

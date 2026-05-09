@@ -124,6 +124,10 @@ export function drawRadarChart(data) {
     var grid = document.getElementById('continental-grid')
     grid.innerHTML = ''
 
+    // Global median SDRS for this year — benchmark against which regions compare
+    var globalSdrsVals = yearData.map(function(d) { return d.sdrs }).filter(function(v) { return v != null })
+    var globalMedian = globalSdrsVals.length ? d3.median(globalSdrsVals) : null
+
     REGIONS.forEach(function(region) {
       var avg = regionAvg(yearData, region.key)
       if (!avg) return
@@ -143,7 +147,14 @@ export function drawRadarChart(data) {
 
       var badge = document.createElement('div')
       badge.className = 'continental-badge'
-      badge.innerHTML = '<span style="color:' + region.color + '">SDRS ' + avg.sdrs.toFixed(3) + '</span>'
+      var deltaHtml = ''
+      if (globalMedian != null) {
+        var delta = avg.sdrs - globalMedian
+        var deltaClass = delta > 0.02 ? 'cb-up' : delta < -0.02 ? 'cb-down' : 'cb-flat'
+        var deltaSign = delta >= 0 ? '+' : '−'
+        deltaHtml = '<span class="cb-delta ' + deltaClass + '" title="Compared to the global median SDRS (' + globalMedian.toFixed(3) + ') across all countries in ' + currentYear + '. Positive = worse than global.">' + deltaSign + Math.abs(delta).toFixed(3) + ' vs&nbsp;global</span>'
+      }
+      badge.innerHTML = '<span class="cb-score" style="color:' + region.color + '">SDRS ' + avg.sdrs.toFixed(3) + '</span>' + deltaHtml
       cell.appendChild(badge)
 
       grid.appendChild(cell)

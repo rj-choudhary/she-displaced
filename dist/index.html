@@ -3,22 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>She Displaced — Gendered Climate Displacement Risk</title>
+  <title>She Displaced — Where Climate Hits Women Hardest</title>
   <meta name="description" content="An interactive data visualization mapping where climate hazards intersect with gender inequality to predict displacement risk for women worldwide." />
-  <meta property="og:title" content="She Displaced — Gendered Climate Displacement Risk" />
+  <meta property="og:title" content="She Displaced — Where Climate Hits Women Hardest" />
   <meta property="og:description" content="A composite index that makes the intersection of climate vulnerability and gender inequality visible, testable, and interactive across 159 countries." />
   <meta property="og:url" content="https://she-displaced.vercel.app" />
   <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231A1A2E'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-size='40' font-weight='700' text-anchor='middle' fill='%23E8614A'%3ES%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-BxSSVPP_.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DdZ2YkJR.css">
+  <script type="module" crossorigin src="/assets/index--1uETXWP.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CiYSk8_0.css">
 </head>
 <body>
 
+  <noscript>
+    <div style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#1A1A2E;color:rgba(255,255,255,0.9);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;padding:24px;">
+      <div style="max-width:520px;text-align:center;">
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:56px;line-height:1;letter-spacing:-0.02em;margin-bottom:20px;">
+          <span style="color:rgba(255,255,255,0.92);">She</span><span style="color:#E8614A;font-style:italic;"> Displaced</span>
+        </div>
+        <p style="font-size:16px;line-height:1.6;color:rgba(255,255,255,0.75);margin-bottom:28px;">
+          This is an interactive scrollytelling dashboard. It needs JavaScript to render the charts, maps, and the Innovation Lab sandbox. Please enable JavaScript and reload the page.
+        </p>
+        <p style="font-size:13px;color:rgba(255,255,255,0.45);letter-spacing:0.04em;">
+          Built for Data Connect Conference 2026 · Women in Analytics
+        </p>
+      </div>
+    </div>
+  </noscript>
+
   <!-- Skip link for keyboard users -->
-  <a href="#section-map" class="skip-link">Skip to main content</a>
+  <a href="#hero" class="skip-link">Skip to main content</a>
 
   <!-- ============================================================
        TOP NAVIGATION — Contextual Progress Header
@@ -88,7 +105,7 @@
   <!-- ============================================================
        PAGE: DASHBOARD (home)
        ============================================================ -->
-  <div id="page-dashboard" class="page active">
+  <div id="page-dashboard" class="page active" role="main">
 
   <!-- HERO -->
   <section id="hero">
@@ -99,10 +116,9 @@
         <span class="she">She</span>
         <span class="displaced">Displaced</span>
       </h1>
-      <p class="hero-subtitle">Gendered Climate Displacement Risk Scoring</p>
+      <p class="hero-subtitle">Where climate hits women hardest.</p>
       <p class="hero-desc">
-        Climate hazards don't displace people equally. This is a composite index
-        mapping where climate vulnerability intersects with gender inequality —
+        A composite index mapping where climate vulnerability intersects with gender inequality —
         revealing the women most at risk of being left behind.
       </p>
       <div class="hero-stats">
@@ -129,7 +145,7 @@
           that the same disaster hits women harder.
         </p>
         <p>
-          Yet this intersection is rarely mapped transparently. That's what SDRS does — openly, and across 20 years.
+          Yet this intersection is rarely mapped transparently. That's what the <strong>She Displacement Risk Score (SDRS)</strong> does — openly, and across 20 years.
         </p>
       </div>
     </div>
@@ -139,7 +155,7 @@
   <section id="section-map" class="viz-section">
     <div class="section-header">
       <div class="section-number">01</div>
-      <h2>The She Displacement Risk Score</h2>
+      <h2>The She Displacement Risk Score (SDRS)</h2>
       <p class="chapter-hook">"150 million women are one storm away from displacement. But the risk isn't just in the clouds — it's in the social fabric."</p>
       <p class="section-desc">
         The SDRS combines climate vulnerability, adaptive capacity gaps, and gender inequality
@@ -224,8 +240,8 @@
     </div>
 
     <div class="insight-box dark-insight">
-      <span class="insight-icon">🎯</span>
-      <span>Algeria's gender gap alone adds <strong>+0.107</strong> to its displacement risk — equivalent to a major climate hazard. Countries with high delta are where gender equality investment delivers the greatest risk reduction.</span>
+      <span class="insight-icon">◆</span>
+      <span>Iran's composite risk runs <strong>+0.286 above</strong> what pure climate exposure would predict — the largest social amplification among high-risk countries. These are the highest-leverage targets for gender-equity investment as climate adaptation.</span>
     </div>
   </section>
 
@@ -306,7 +322,7 @@
         <h3>Risk is Mitigatable Through Policy</h3>
         <p>
           Rwanda has <strong>high climate vulnerability (0.567)</strong> — yet its SDRS is significantly lower
-          because gender equality (0.794) and improving readiness partially offset the hazard.
+          because gender equality (0.790) and improving readiness partially offset the hazard.
           This proves the risk is not inevitable. Gender equity is a climate adaptation strategy.
         </p>
       </div>
@@ -317,12 +333,12 @@
             <div class="outlier-stat bad">
               <div class="o-label">Climate Vulnerability</div>
               <div class="o-val">0.567</div>
-              <div class="o-sub">Top 20% globally</div>
+              <div class="o-sub">Top 6% globally</div>
             </div>
             <div class="outlier-arrow">→</div>
             <div class="outlier-stat good">
               <div class="o-label">SDRS Score</div>
-              <div class="o-val">0.441</div>
+              <div class="o-val">0.487</div>
               <div class="o-sub">Pulled down by gender equity</div>
             </div>
           </div>
@@ -330,8 +346,8 @@
             <div class="factor-item">
               <div class="factor-bar-wrap">
                 <div class="factor-label">Gender Gap Score</div>
-                <div class="factor-bar"><div class="factor-fill good-fill" style="width:79.4%"></div></div>
-                <div class="factor-val">0.794</div>
+                <div class="factor-bar"><div class="factor-fill good-fill" style="width:79%"></div></div>
+                <div class="factor-val">0.790</div>
               </div>
             </div>
             <div class="factor-item">
@@ -350,8 +366,7 @@
             </div>
           </div>
           <p class="outlier-cta">
-            If Algeria matched Rwanda's gender gap score, its SDRS would drop by ~0.10 —
-            equivalent to eliminating a major climate hazard entirely.
+            Algeria's gender penalty is nearly <strong>double</strong> Rwanda's — <strong>closing that gap is the fastest, cheapest climate-adaptation investment available</strong>, because it reduces risk without requiring large-scale infrastructure change.
           </p>
         </div>
       </div>
@@ -673,7 +688,7 @@
     <div class="section-header">
       <div class="section-number">07</div>
       <h2>The Path Forward</h2>
-      <p class="chapter-hook">"Policy is protection. These nations proved that closing the gender gap is the most effective climate defense."</p>
+      <p class="chapter-hook">"Policy is protection. These nations show that closing the gender gap is a powerful — and measurable — climate defense."</p>
       <p class="section-desc">
         Not all trajectories point toward crisis. These are the Resilience Champions — countries that have made the greatest progress
         in reducing their SDRS since their peak risk year. Their stories are the blueprint.
@@ -706,7 +721,7 @@
         </div>
         <div class="c-stat">
           <div class="c-num">29</div>
-          <div class="c-label">Still in Compounding Crisis<span class="c-cite" title="Countries with SDRS ≥ 0.60 in 2025 — the top 20% globally. Structurally compounding climate vulnerability and gender inequality.">†</span></div>
+          <div class="c-label">Still in Compounding Crisis<span class="c-cite" title="High Risk = SDRS ≥ 0.60 in 2025 — the top 20% (quintile) of scored countries. These 29 countries show structurally compounding climate vulnerability and gender inequality. See Methodology › High Risk Threshold Definition.">†</span></div>
         </div>
       </div>
       <p class="closing-credit">Built for Data Connect Conference 2026 · Women in Analytics</p>
@@ -819,7 +834,7 @@
   <!-- ============================================================
        PAGE: METHODOLOGY
        ============================================================ -->
-  <div id="page-methodology" class="page hidden">
+  <div id="page-methodology" class="page hidden" role="main">
     <div class="methodology-wrap">
 
       <div class="method-hero">
@@ -828,8 +843,25 @@
         <p>How the She Displacement Risk Score is constructed, why each component was chosen, and what the data means for policy.</p>
       </div>
 
+      <div class="method-layout">
+
+      <aside class="method-toc" aria-label="Methodology table of contents">
+        <div class="method-toc-eyebrow">On this page</div>
+        <ol class="method-toc-list">
+          <li><a href="#method-formula" data-toc="method-formula"><span class="mt-num">01</span><span class="mt-label">The SDRS Formula</span></a></li>
+          <li><a href="#method-climate" data-toc="method-climate"><span class="mt-num">02</span><span class="mt-label">Climate Vulnerability</span></a></li>
+          <li><a href="#method-adaptive" data-toc="method-adaptive"><span class="mt-num">03</span><span class="mt-label">Adaptive Capacity Gap</span></a></li>
+          <li><a href="#method-gender" data-toc="method-gender"><span class="mt-num">04</span><span class="mt-label">Gender Penalty</span></a></li>
+          <li><a href="#method-gdd" data-toc="method-gdd"><span class="mt-num">05</span><span class="mt-label">Gender Displacement Delta</span></a></li>
+          <li><a href="#method-sources" data-toc="method-sources"><span class="mt-num">06</span><span class="mt-label">Data Sources &amp; Coverage</span></a></li>
+          <li><a href="#method-limits" data-toc="method-limits"><span class="mt-num">07</span><span class="mt-label">Limitations &amp; Caveats</span></a></li>
+        </ol>
+      </aside>
+
+      <div class="method-body">
+
       <!-- SDRS Formula -->
-      <div class="method-section">
+      <div class="method-section" id="method-formula">
         <div class="method-number">01</div>
         <div class="method-content">
           <h2>The SDRS Formula</h2>
@@ -868,7 +900,7 @@
       </div>
 
       <!-- Component 1 -->
-      <div class="method-section alt">
+      <div class="method-section alt" id="method-climate">
         <div class="method-number" style="color:var(--teal-lt)">02</div>
         <div class="method-content">
           <h2><span class="f-climate">Climate Vulnerability</span></h2>
@@ -890,7 +922,7 @@
       </div>
 
       <!-- Component 2 -->
-      <div class="method-section">
+      <div class="method-section" id="method-adaptive">
         <div class="method-number" style="color:var(--amber)">03</div>
         <div class="method-content">
           <h2><span class="f-adaptive">Adaptive Capacity Gap</span></h2>
@@ -912,7 +944,7 @@
       </div>
 
       <!-- Component 3 -->
-      <div class="method-section alt">
+      <div class="method-section alt" id="method-gender">
         <div class="method-number" style="color:var(--coral-lt)">04</div>
         <div class="method-content">
           <h2><span class="f-gender">Gender Penalty</span></h2>
@@ -935,7 +967,7 @@
       </div>
 
       <!-- GDD -->
-      <div class="method-section">
+      <div class="method-section" id="method-gdd">
         <div class="method-number" style="color:var(--coral)">05</div>
         <div class="method-content">
           <h2>Gender Displacement Delta (GDD)</h2>
@@ -967,13 +999,13 @@
       </div>
 
       <!-- Data sources -->
-      <div class="method-section alt">
+      <div class="method-section alt" id="method-sources">
         <div class="method-number">06</div>
         <div class="method-content">
           <h2>Data Sources &amp; Coverage</h2>
           <div class="sources-grid">
             <div class="source-card">
-              <div class="source-name"><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener">ND-GAIN Country Index ↗</a></div>
+              <div class="source-name"><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener"></a>ND-GAIN Country Index ↗</a></div>
               <div class="source-org">Notre Dame Global Adaptation Initiative</div>
               <div class="source-desc">Annual vulnerability and readiness scores for 182 countries, 1995–2023. For 2024–2025, the Last Observation Carried Forward (LOCF) approach was applied — 2023 values are held constant. Peer-reviewed methodology combining 45 indicators across 6 life sectors.</div>
               <div class="source-cols"><strong>Columns used:</strong> vulnerability, readiness, and all sub-dimensions</div>
@@ -1029,7 +1061,7 @@
       </div>
 
       <!-- Limitations -->
-      <div class="method-section">
+      <div class="method-section" id="method-limits">
         <div class="method-number">07</div>
         <div class="method-content">
           <h2>Limitations &amp; Caveats</h2>
@@ -1043,6 +1075,9 @@
           </ul>
         </div>
       </div>
+
+      </div><!-- /method-body -->
+      </div><!-- /method-layout -->
 
     </div>
   </div><!-- /page-methodology -->

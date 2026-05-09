@@ -9,6 +9,13 @@ const CHAPTERS = [
   { id: 'section-hope',     num: '07', name: 'Hope'         },
 ]
 
+// Hash-route map — translates URL hashes to page ids.
+// Dashboard is the implicit default (empty hash or unrecognized).
+const HASH_ROUTES = {
+  '#/methodology': 'methodology',
+  '#/explorer':    'explorer',
+}
+
 export function initNav() {
   const nav        = document.getElementById('top-nav')
   const chapterBar = document.getElementById('chapter-bar')
@@ -32,7 +39,6 @@ export function initNav() {
   let activeChapterId = null
 
   function setActiveChapter(chapterId) {
-    // chapterId === null ⇒ deactivate all (user is in hero or above section 1)
     if (chapterId === null) {
       if (activeChapterId === null) return
       activeChapterId = null
@@ -46,7 +52,6 @@ export function initNav() {
     const chapter = CHAPTERS.find(c => c.id === chapterId)
     if (!chapter) return
     if (activeChapterId === chapterId) {
-      // Still re-move indicator in case layout changed
       const activePill = document.querySelector('.chapter-pill.active')
       if (activePill) moveIndicator(activePill)
       return
@@ -67,10 +72,11 @@ export function initNav() {
 
   // ── Detect which chapter is currently in view ─────────────────
   function detectCurrentChapter() {
-    const viewH = window.innerHeight
+    // Only run on dashboard
+    const dashboard = document.getElementById('page-dashboard')
+    if (!dashboard || !dashboard.classList.contains('active')) return
 
-    // Walk chapters in order — last one whose top has crossed 40% of viewport wins.
-    // If none qualifies (e.g. user is in hero), leave current = null to clear the nav.
+    const viewH = window.innerHeight
     let current = null
     for (const ch of CHAPTERS) {
       const el = document.getElementById(ch.id)
@@ -83,8 +89,8 @@ export function initNav() {
     setActiveChapter(current)
   }
 
-  // ── Page switching ────────────────────────────────────────────
-  function showPage(pageId) {
+  // ── Page switching (internal; called by route handler) ────────
+  function applyPage(pageId) {
     pages.forEach(p => {
       p.classList.toggle('active', p.id === `page-${pageId}`)
       p.classList.toggle('hidden', p.id !== `page-${pageId}`)
@@ -93,41 +99,130 @@ export function initNav() {
     document.querySelectorAll('.nav-util-link').forEach(l => {
       l.classList.toggle('active', l.dataset.page === pageId)
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Clear chapter indicator when off-dashboard
+    if (pageId !== 'dashboard') setActiveChapter(null)
   }
 
+  // ── Hash routing ───────────────────────────────────────────────
+  // Map the current URL hash to a page id; falls back to 'dashboard' for
+  // empty/unknown hashes or for TOC anchors (#method-*) on the methodology page.
+  function pageFromHash() {
+    const hash = window.location.hash
+    // Section anchors (method-*, section-*) imply staying on the current page
+    if (hash.startsWith('#method-')) return 'methodology'
+    if (hash.startsWith('#section-') || hash === '#hero' || hash === '') return 'dashboard'
+    return HASH_ROUTES[hash] || 'dashboard'
+  }
+
+  function navigateToHash() {
+    const pageId = pageFromHash()
+    applyPage(pageId)
+
+    const hash = window.location.hash
+    // If there's a section anchor in the hash, scroll to it after page switch
+    if (hash && hash.startsWith('#') && !HASH_ROUTES[hash]) {
+      const target = document.getElementById(hash.slice(1))
+      if (target) {
+        // Use a short timeout so the page visibility change lands before scroll
+        setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30)
+      }
+    } else if (HASH_ROUTES[hash] || hash === '') {
+      // Top-of-page routes: scroll to top instantly (no animation, feels snappier)
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' })
+    }
+
+    // Refresh chapter detection after route change
+    setTimeout(detectCurrentChapter, 50)
+  }
+
+  // ── Utility link clicks (Data Explorer / Methodology) ─────────
   document.querySelectorAll('.nav-util-link').forEach(link => {
-    link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page) })
+    link.addEventListener('click', e => {
+      e.preventDefault()
+      const page = link.dataset.page
+      const newHash = page === 'dashboard' ? '' : `#/${page}`
+      if (window.location.hash !== newHash) {
+        // Pushing the hash triggers `hashchange`, which calls navigateToHash()
+        if (newHash) history.pushState(null, '', newHash)
+        else history.pushState(null, '', window.location.pathname + window.location.search)
+      }
+      navigateToHash()
+    })
   })
 
+  // Brand click → dashboard
   const brand = document.querySelector('.nav-brand')
-  if (brand) brand.addEventListener('click', e => { e.preventDefault(); showPage('dashboard') })
+  if (brand) brand.addEventListener('click', e => {
+    e.preventDefault()
+    if (window.location.hash !== '') {
+      history.pushState(null, '', window.location.pathname + window.location.search)
+    }
+    navigateToHash()
+  })
 
+  // Chapter pill clicks — jump to section anchor, staying on dashboard
   document.querySelectorAll('.chapter-pill').forEach(pill => {
     pill.addEventListener('click', e => {
       e.preventDefault()
-      const target = document.querySelector(pill.getAttribute('href'))
-      // Only page-switch if we're not already on the dashboard — avoids a
-      // redundant scroll-to-top flash before scrolling to the chapter.
+      const sectionId = pill.getAttribute('href').slice(1)
+      const target = document.getElementById(sectionId)
       const dashboard = document.getElementById('page-dashboard')
       const alreadyOnDashboard = dashboard && dashboard.classList.contains('active')
-      if (alreadyOnDashboard) {
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      } else {
-        showPage('dashboard')
-        // Wait for page switch to settle, then scroll straight to target
-        if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      if (!alreadyOnDashboard) {
+        history.pushState(null, '', `#${sectionId}`)
+        navigateToHash()
+      } else if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        // Update hash without triggering scroll/popstate weirdness
+        history.replaceState(null, '', `#${sectionId}`)
       }
     })
   })
 
-  // ── Scroll: detect chapter + nav shadow ───────────────────────
+  // Methodology TOC clicks — smooth-scroll inside the methodology page
+  document.querySelectorAll('.method-toc-list a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault()
+      const targetId = link.getAttribute('href').slice(1)
+      const target = document.getElementById(targetId)
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        history.replaceState(null, '', `#${targetId}`)
+      }
+    })
+  })
+
+  // ── Methodology TOC: highlight active section on scroll ────────
+  const tocLinks = Array.from(document.querySelectorAll('.method-toc-list a[data-toc]'))
+  const methodSections = tocLinks
+    .map(a => document.getElementById(a.dataset.toc))
+    .filter(Boolean)
+
+  function detectActiveMethodSection() {
+    const methodologyPage = document.getElementById('page-methodology')
+    if (!methodologyPage || !methodologyPage.classList.contains('active')) return
+
+    const viewH = window.innerHeight
+    let active = methodSections[0]
+    for (const sec of methodSections) {
+      const rect = sec.getBoundingClientRect()
+      if (rect.top < viewH * 0.35) active = sec
+    }
+    tocLinks.forEach(a => {
+      a.classList.toggle('active', a.dataset.toc === (active && active.id))
+    })
+  }
+
+  // ── Scroll handler ─────────────────────────────────────────────
   window.addEventListener('scroll', () => {
-    // Nav shadow
     nav.style.boxShadow = window.scrollY > 10 ? '0 2px 20px rgba(0,0,0,0.35)' : 'none'
-    // Chapter detection on every scroll
     detectCurrentChapter()
+    detectActiveMethodSection()
   }, { passive: true })
+
+  // Hash change (back/forward button, TOC clicks, manual URL edits)
+  window.addEventListener('hashchange', navigateToHash)
+  window.addEventListener('popstate', navigateToHash)
 
   // ── Scroll animations: section fade-in ───────────────────────
   const animObserver = new IntersectionObserver(entries => {
@@ -138,21 +233,20 @@ export function initNav() {
       }
     })
   }, { threshold: 0.08, rootMargin: '-40px 0px' })
-
   document.querySelectorAll('.viz-section, .narrative-section').forEach(el => {
     animObserver.observe(el)
   })
 
   // ── Init ──────────────────────────────────────────────────────
-  showPage('dashboard')
-
-  // Detect current chapter — no explicit pre-selection so hero stays clean.
-  // Run a couple of times to handle layout timing (fonts, images, hero height).
+  navigateToHash() // Apply the URL hash on first load
   detectCurrentChapter()
-  setTimeout(detectCurrentChapter, 300)
+  setTimeout(() => {
+    detectCurrentChapter()
+    detectActiveMethodSection()
+  }, 300)
 
-  // Re-position on resize
   window.addEventListener('resize', () => {
     detectCurrentChapter()
+    detectActiveMethodSection()
   }, { passive: true })
 }

@@ -79,6 +79,15 @@ export function initLab(data) {
   }
 
   // ── Render leaderboard ────────────────────────────────────────
+  // Component palette — must match the slider accents visually.
+  // w_v → climate (teal), w_r → adaptive gap (amber), w_g → gender (purple), w_d → disaster (coral)
+  const COMPONENT_META = [
+    { wk: 'w_v', nk: 'n_vulnerability',     color: '#2AADAD', label: 'Climate' },
+    { wk: 'w_r', nk: 'n_adaptive_gap',      color: '#F59E0B', label: 'Adaptive gap' },
+    { wk: 'w_g', nk: 'n_gender_penalty',    color: '#9b59b6', label: 'Gender' },
+    { wk: 'w_d', nk: 'n_disaster_burden',   color: '#E8614A', label: 'Disaster' },
+  ]
+
   function renderLeaderboard() {
     if (!leaderboard) return
     const ranked = scoreAndRank(year2025, weights)
@@ -94,16 +103,28 @@ export function initLab(data) {
       const shiftText   = shift > 0 ? `▲${shift}` : shift < 0 ? `▼${Math.abs(shift)}` : '—'
       const shiftClass  = shift > 0 ? 'shift-up' : shift < 0 ? 'shift-down' : 'shift-none'
       const barPct      = Math.round((d._score / maxScore) * 100)
-      const color       = REGION_COLORS[d.region] || '#9CA3AF'
       const isSpotlight = d.iso3 === spotlightIso
+
+      // Per-component contribution to THIS country's score.
+      // share = (w × n) / score  →  sums to 1 across the 4 components.
+      const segments = COMPONENT_META.map(c => {
+        const contrib = weights[c.wk] * d[c.nk]
+        const share   = d._score > 0 ? contrib / d._score : 0
+        return { ...c, share, pct: share * 100 }
+      })
+      const tooltipText = segments
+        .map(s => `${s.label}: ${(s.pct).toFixed(0)}%`)
+        .join(' · ')
 
       const row = document.createElement('div')
       row.className = `lab-board-row${isSpotlight ? ' spotlight' : ''}`
       row.innerHTML = `
         <span class="lbr-rank">${rank}</span>
         <span class="lbr-name">${d.name.length > 18 ? d.name.slice(0,16)+'…' : d.name}</span>
-        <div class="lbr-bar-wrap">
-          <div class="lbr-bar" style="width:${barPct}%;background:${color}"></div>
+        <div class="lbr-bar-wrap" title="${tooltipText}">
+          <div class="lbr-bar-inner" style="width:${barPct}%">
+            ${segments.map(s => `<span class="lbr-seg" style="width:${s.pct.toFixed(2)}%;background:${s.color}"></span>`).join('')}
+          </div>
         </div>
         <span class="lbr-score">${d._score.toFixed(3)}</span>
         <span class="lbr-shift ${shiftClass}">${shiftText}</span>

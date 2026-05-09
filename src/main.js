@@ -62,7 +62,13 @@ function drawHopeChart(data) {
   const top1 = top15[0]
   // Stats computed on ALL improvers (not just the 15 displayed) for accurate narrative
   const genderGainers = allChampions.filter(c => c.genderGain != null && c.genderGain > 0.03).length
-  const avgYearsToRecover = d3.mean(allChampions, c => c.latestYear - c.peakYear)
+  // Years-to-recover scoped to gender-gap champions — the subgroup we're
+  // celebrating. Overall mean is dragged by countries whose "peak" year is
+  // recent (2024), which overstates recovery maturity.
+  const genderGainList = allChampions.filter(c => c.genderGain != null && c.genderGain > 0.03)
+  const avgYearsToRecover = genderGainList.length
+    ? d3.mean(genderGainList, c => c.latestYear - c.peakYear)
+    : d3.mean(allChampions, c => c.latestYear - c.peakYear)
   const uniqueRegions = new Set(allChampions.map(c => c.region))
   const biggestGenderGain = [...allChampions]
     .filter(c => c.genderGain != null)

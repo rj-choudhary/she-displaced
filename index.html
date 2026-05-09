@@ -6,7 +6,7 @@
   <title>She Displaced — Gendered Climate Displacement Risk</title>
   <meta name="description" content="An interactive data visualization mapping where climate hazards intersect with gender inequality to predict displacement risk for women worldwide." />
   <meta property="og:title" content="She Displaced — Gendered Climate Displacement Risk" />
-  <meta property="og:description" content="The first composite index mapping where climate vulnerability intersects with gender inequality across 159 countries." />
+  <meta property="og:description" content="A composite index that makes the intersection of climate vulnerability and gender inequality visible, testable, and interactive across 159 countries." />
   <meta property="og:url" content="https://she-displaced.vercel.app" />
   <meta name="twitter:card" content="summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -100,14 +100,14 @@
       </h1>
       <p class="hero-subtitle">Gendered Climate Displacement Risk Scoring</p>
       <p class="hero-desc">
-        Climate hazards don't displace people equally. This is the first composite index
+        Climate hazards don't displace people equally. This is a composite index
         mapping where climate vulnerability intersects with gender inequality —
         revealing the women most at risk of being left behind.
       </p>
       <div class="hero-stats">
         <div class="stat"><span class="stat-num" id="stat-countries">159</span><span class="stat-label">Countries Scored</span></div>
         <div class="stat"><span class="stat-num" id="stat-years">20</span><span class="stat-label">Years of Data</span></div>
-        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk<span class="stat-asterisk" title="High Risk = SDRS ≥ 0.60 in 2025 (top 20% / quintile globally). These 29 countries score at or above the 80th percentile on the She Displacement Risk Score, indicating compounding climate vulnerability and gender inequality.">*</span></span></div>
+        <div class="stat"><span class="stat-num" id="stat-top">150M</span><span class="stat-label">Women at Risk<span class="stat-asterisk" title="Source: UN Women (2022), 'Gender Equality and Climate Change' — estimates 158–189M women and girls live in areas of elevated climate-displacement risk. We use the lower-bound rounded figure.">*</span></span></div>
       </div>
       <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth'})">
         Explore the Data ↓
@@ -128,7 +128,7 @@
           that the same disaster hits women harder.
         </p>
         <p>
-          Yet no composite index has mapped this intersection — until now.
+          Yet this intersection is rarely mapped transparently. That's what SDRS does — openly, and across 20 years.
         </p>
       </div>
     </div>
@@ -653,7 +653,13 @@
       <div class="lab-right">
         <div class="lab-board-header">
           <div class="lab-card-title">Top 10 — Live Ranking <span class="lab-year-tag">2025</span></div>
-          <p class="lab-card-desc">Updates instantly as you drag. Rank shifts show movement from the default weighting.</p>
+          <p class="lab-card-desc">Updates instantly as you drag. Bars show <em>why</em> each country ranks — segmented by the 4 SDRS components.</p>
+          <div class="lab-seg-legend" aria-label="Component color legend">
+            <span class="lsl-item"><span class="lsl-chip" style="background:#2AADAD"></span>Climate</span>
+            <span class="lsl-item"><span class="lsl-chip" style="background:#F59E0B"></span>Adaptive gap</span>
+            <span class="lsl-item"><span class="lsl-chip" style="background:#9b59b6"></span>Gender</span>
+            <span class="lsl-item"><span class="lsl-chip" style="background:#E8614A"></span>Disaster</span>
+          </div>
         </div>
         <div id="lab-leaderboard"></div>
       </div>
@@ -690,19 +696,19 @@
           <div class="c-label">Countries Scored</div>
         </div>
         <div class="c-stat">
-          <div class="c-num">150M</div>
-          <div class="c-label">Women at Risk<span class="c-cite" title="Source: UN Women (2022), 'Gender Equality and Climate Change' — estimates that 158–189M women and girls live in areas of elevated climate-displacement risk. We use the lower-bound rounded figure.">†</span></div>
+          <div class="c-num">74</div>
+          <div class="c-label">Closing the Gender Gap</div>
+        </div>
+        <div class="c-stat">
+          <div class="c-num">~7<span class="c-unit">yrs</span></div>
+          <div class="c-label">Peak → Recovery<span class="c-cite" title="Median time from peak SDRS year to latest observation, computed across the 74 gender-gap champions. Individual trajectories vary.">†</span></div>
         </div>
         <div class="c-stat">
           <div class="c-num">29</div>
-          <div class="c-label">In Compounding Crisis</div>
-        </div>
-        <div class="c-stat">
-          <div class="c-num">74</div>
-          <div class="c-label">Champions Closing the Gender Gap</div>
+          <div class="c-label">Still in Compounding Crisis<span class="c-cite" title="Countries with SDRS ≥ 0.60 in 2025 — the top 20% globally. Structurally compounding climate vulnerability and gender inequality.">†</span></div>
         </div>
       </div>
-      <p class="closing-credit">Built for Data Connect Conference · Women in Analytics 2026</p>
+      <p class="closing-credit">Built for Data Connect Conference 2026 · Women in Analytics</p>
     </div>
   </section>
 
@@ -933,27 +939,27 @@
         <div class="method-content">
           <h2>Gender Displacement Delta (GDD)</h2>
           <div class="formula-block compact">
-            <span class="formula-main">GDD = <span class="f-gender">SDRS</span> − <span class="f-climate">0.30 × n(Climate Vulnerability)</span></span>
+            <span class="formula-main">GDD = <span class="f-gender">SDRS</span> − <span class="f-climate">n(Climate Vulnerability)</span></span>
           </div>
-          <p>The GDD isolates the contribution of gender inequality, adaptive capacity, and disaster burden to displacement risk — above and beyond what the climate hazard alone would predict.</p>
+          <p>The GDD compares each country's composite SDRS against a "climate-only" counterfactual — what the index would say if physical climate exposure were the <em>only</em> driver. The sign tells the story: positive means gender, adaptive capacity, and disaster burden are pushing displacement risk <em>above</em> what climate exposure alone predicts; negative means climate is the dominant factor and social dimensions are not compounding it.</p>
           <div class="method-note">
-            <strong>Policy interpretation:</strong> A country with GDD &gt; 0.08 is one where gender inequality is doing more work than the climate hazard to create displacement risk. These are the highest-leverage targets for intervention — improving gender equality here would reduce SDRS more than any climate adaptation measure alone.
+            <strong>Policy interpretation:</strong> A country with GDD &gt; +0.15 has its displacement risk substantially driven by gender inequality or weak adaptive capacity — the highest-leverage targets for social intervention. A country with GDD &lt; 0 faces a risk profile dominated by its physical climate exposure, where mitigation and adaptation infrastructure matter most.
           </div>
           <div class="gdd-examples">
             <div class="gdd-ex high">
-              <div class="gdd-country">Algeria</div>
-              <div class="gdd-val">GDD = +0.107</div>
-              <div class="gdd-desc">Gender inequality is the primary driver — moderate climate risk, high gender penalty</div>
+              <div class="gdd-country">Iran</div>
+              <div class="gdd-val">GDD = +0.286</div>
+              <div class="gdd-desc">Composite risk is well above pure climate exposure — gender inequality and adaptive gaps are the primary drivers</div>
             </div>
             <div class="gdd-ex mid">
               <div class="gdd-country">Pakistan</div>
-              <div class="gdd-val">GDD = +0.024</div>
-              <div class="gdd-desc">Both climate and gender contribute roughly equally</div>
+              <div class="gdd-val">GDD = +0.164</div>
+              <div class="gdd-desc">Extreme climate exposure plus elevated social risk — both dimensions compound into a true crisis</div>
             </div>
             <div class="gdd-ex low">
-              <div class="gdd-country">Chad</div>
-              <div class="gdd-val">GDD = −0.021</div>
-              <div class="gdd-desc">Climate hazard dominates — even high gender equality couldn't fully offset this level of exposure</div>
+              <div class="gdd-country">Rwanda</div>
+              <div class="gdd-val">GDD = −0.327</div>
+              <div class="gdd-desc">High climate exposure, but gender progress and readiness investment are measurably <em>reducing</em> composite risk below the climate-only baseline</div>
             </div>
           </div>
         </div>
@@ -966,19 +972,19 @@
           <h2>Data Sources &amp; Coverage</h2>
           <div class="sources-grid">
             <div class="source-card">
-              <div class="source-name">ND-GAIN Country Index</div>
+              <div class="source-name"><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener">ND-GAIN Country Index ↗</a></div>
               <div class="source-org">Notre Dame Global Adaptation Initiative</div>
               <div class="source-desc">Annual vulnerability and readiness scores for 182 countries, 1995–2023. For 2024–2025, the Last Observation Carried Forward (LOCF) approach was applied — 2023 values are held constant. Peer-reviewed methodology combining 45 indicators across 6 life sectors.</div>
               <div class="source-cols"><strong>Columns used:</strong> vulnerability, readiness, and all sub-dimensions</div>
             </div>
             <div class="source-card">
-              <div class="source-name">Global Gender Gap Report</div>
+              <div class="source-name"><a href="https://www.weforum.org/publications/global-gender-gap-report-2025/" target="_blank" rel="noopener">Global Gender Gap Report ↗</a></div>
               <div class="source-org">World Economic Forum</div>
               <div class="source-desc">Annual gender parity index for 146+ countries, 2006–2025. Covers economic, political, educational, and health dimensions. Data available through 2025.</div>
               <div class="source-cols"><strong>Columns used:</strong> Overall score, economic participation, political empowerment, educational attainment, health &amp; survival</div>
             </div>
             <div class="source-card">
-              <div class="source-name">EM-DAT International Disaster Database</div>
+              <div class="source-name"><a href="https://www.emdat.be/" target="_blank" rel="noopener">EM-DAT International Disaster Database ↗</a></div>
               <div class="source-org">Centre for Research on the Epidemiology of Disasters</div>
               <div class="source-desc">Global database of natural and technological disasters since 1900. Climate disaster data available through 2025. Used for total deaths, total affected, and disaster count per country-year.</div>
               <div class="source-cols"><strong>Columns used:</strong> Total Deaths, Total Affected, Disaster count</div>
@@ -1051,19 +1057,18 @@
           <span class="footer-she">She</span><span class="footer-displaced">Displaced</span>
         </div>
         <p class="footer-tagline">Gendered Climate Displacement Risk Scoring</p>
-        <p class="footer-event">Built for Data Connect Conference · Women in Analytics 2026</p>
       </div>
 
       <div class="footer-col">
         <div class="footer-col-title">About the Project</div>
-        <p>She Displaced is the first composite index mapping where climate vulnerability intersects with gender inequality to predict displacement risk specifically for women. It combines three peer-reviewed data sources into a single, actionable score across 159 countries and 20 years.</p>
+        <p>She Displaced is a composite index that makes the intersection of climate vulnerability and gender inequality visible, testable, and interactive — combining three peer-reviewed data sources into a single actionable score across 159 countries and 20 years.</p>
       </div>
 
       <div class="footer-col">
         <div class="footer-col-title">Data Sources</div>
         <ul class="footer-links">
           <li><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener">ND-GAIN Country Index</a><span>Notre Dame Global Adaptation Initiative</span></li>
-          <li><a href="https://www.weforum.org/reports/global-gender-gap-report-2023" target="_blank" rel="noopener">Global Gender Gap Report</a><span>World Economic Forum</span></li>
+          <li><a href="https://www.weforum.org/publications/global-gender-gap-report-2025/" target="_blank" rel="noopener">Global Gender Gap Report</a><span>World Economic Forum</span></li>
           <li><a href="https://www.emdat.be/" target="_blank" rel="noopener">EM-DAT Disaster Database</a><span>CRED, Université catholique de Louvain</span></li>
         </ul>
       </div>
@@ -1084,11 +1089,20 @@
     </div>
 
     <div class="footer-bottom">
-      <span>She Displaced · Data Connect Conference</span>
+      <span>Data Connect Conference 2026</span>
       <span class="footer-sep">·</span>
       <span>SDRS is a research index, not a policy instrument</span>
       <span class="footer-sep">·</span>
       <span>Data: 2006–2025 · 159 countries</span>
+      <span class="footer-author">
+        Built by
+        <a href="https://www.linkedin.com/in/rajendrachoudhary1/" target="_blank" rel="noopener noreferrer" aria-label="Rajendra Choudhary on LinkedIn" class="footer-author-link">
+          <span class="footer-author-name">Rajendra Choudhary</span>
+          <svg class="footer-author-icon" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M20.45 20.45h-3.55v-5.56c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.44-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.55C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/>
+          </svg>
+        </a>
+      </span>
     </div>
   </footer>
 

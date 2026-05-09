@@ -33,9 +33,9 @@ export function drawDeltaChart(data) {
     .attr('text-anchor', 'middle')
     .attr('fill', 'rgba(255,255,255,0.35)')
     .attr('font-size', 9).attr('letter-spacing', '0.12em').attr('font-weight', '600')
-    .text('GENDER DISPLACEMENT DELTA (SDRS − Climate × 0.30)')
+    .text('GENDER DISPLACEMENT DELTA (SDRS − Climate Vulnerability)')
 
-  const xScale = d3.scaleLinear().domain([-0.01, 0.13]).range([0, innerW]).clamp(true)
+  const xScale = d3.scaleLinear().domain([-0.02, 0.32]).range([0, innerW]).clamp(true)
 
   // Zero line
   g.append('line')
@@ -64,7 +64,7 @@ export function drawDeltaChart(data) {
   const valsG   = g.append('g')
 
   const deltaColor = d3.scaleSequential()
-    .domain([0, 0.11])
+    .domain([0, 0.25])
     .interpolator(d3.interpolateRgb('rgba(42,173,173,0.7)', '#E8614A'))
     .clamp(true)
 
@@ -72,11 +72,13 @@ export function drawDeltaChart(data) {
     const yearData = getDataForYear(data, currentYear)
     const withDelta = yearData.map(d => ({
       ...d,
-      // GDD = SDRS minus the pure climate contribution (0.30 × n_V)
-      // Shows how much gender + adaptive + disaster add beyond climate alone
+      // GDD = SDRS − n_vulnerability (a "climate-only" counterfactual SDRS)
+      // Positive = non-climate dimensions push composite ABOVE what pure climate exposure
+      // would predict. Negative = climate exposure is the dominant risk; social/adaptive
+      // factors are not adding risk on top.
       gdd: d.sdrs != null && d.n_vulnerability != null
-        ? d.sdrs - (d.n_vulnerability * 0.30)
-        : d.sdrs != null ? d.sdrs - d.vulnerability : 0
+        ? d.sdrs - d.n_vulnerability
+        : 0
     }))
     const top25 = withDelta.sort((a, b) => b.gdd - a.gdd).slice(0, n)
 
@@ -121,7 +123,7 @@ export function drawDeltaChart(data) {
       .transition().duration(500)
       .attr('y', (d, i) => yPos(i) + barH / 2)
       .attr('x', d => xScale(Math.max(0, d.gdd)) + 5)
-      .attr('fill', d => d.gdd > 0.06 ? '#F4957F' : 'rgba(255,255,255,0.4)')
+      .attr('fill', d => d.gdd > 0.20 ? '#F4957F' : 'rgba(255,255,255,0.4)')
       .text(d => d3.format('+.3f')(d.gdd))
 
     // Context scores on right

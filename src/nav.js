@@ -32,6 +32,17 @@ export function initNav() {
   let activeChapterId = null
 
   function setActiveChapter(chapterId) {
+    // chapterId === null ⇒ deactivate all (user is in hero or above section 1)
+    if (chapterId === null) {
+      if (activeChapterId === null) return
+      activeChapterId = null
+      document.querySelectorAll('.chapter-pill').forEach(pill => pill.classList.remove('active'))
+      if (indicator) indicator.style.opacity = '0'
+      if (mobileNum)  mobileNum.textContent  = ''
+      if (mobileName) mobileName.textContent = ''
+      return
+    }
+
     const chapter = CHAPTERS.find(c => c.id === chapterId)
     if (!chapter) return
     if (activeChapterId === chapterId) {
@@ -56,17 +67,16 @@ export function initNav() {
 
   // ── Detect which chapter is currently in view ─────────────────
   function detectCurrentChapter() {
-    const navH = 70 // nav height + buffer
     const viewH = window.innerHeight
 
-    // Walk chapters in reverse — last one that has entered the viewport wins
-    let current = CHAPTERS[0].id
+    // Walk chapters in order — last one whose top has crossed 40% of viewport wins.
+    // If none qualifies (e.g. user is in hero), leave current = null to clear the nav.
+    let current = null
     for (const ch of CHAPTERS) {
       const el = document.getElementById(ch.id)
       if (!el) continue
       const rect = el.getBoundingClientRect()
-      // Section top is above 60% of viewport
-      if (rect.top < viewH * 0.6) {
+      if (rect.top < viewH * 0.4) {
         current = ch.id
       }
     }
@@ -96,9 +106,18 @@ export function initNav() {
   document.querySelectorAll('.chapter-pill').forEach(pill => {
     pill.addEventListener('click', e => {
       e.preventDefault()
-      showPage('dashboard')
       const target = document.querySelector(pill.getAttribute('href'))
-      if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      // Only page-switch if we're not already on the dashboard — avoids a
+      // redundant scroll-to-top flash before scrolling to the chapter.
+      const dashboard = document.getElementById('page-dashboard')
+      const alreadyOnDashboard = dashboard && dashboard.classList.contains('active')
+      if (alreadyOnDashboard) {
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } else {
+        showPage('dashboard')
+        // Wait for page switch to settle, then scroll straight to target
+        if (target) setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+      }
     })
   })
 
@@ -127,12 +146,10 @@ export function initNav() {
   // ── Init ──────────────────────────────────────────────────────
   showPage('dashboard')
 
-  // Set initial active chapter — try multiple times to handle layout timing
-  setActiveChapter('section-map')
-  setTimeout(() => {
-    setActiveChapter('section-map')
-    detectCurrentChapter()
-  }, 300)
+  // Detect current chapter — no explicit pre-selection so hero stays clean.
+  // Run a couple of times to handle layout timing (fonts, images, hero height).
+  detectCurrentChapter()
+  setTimeout(detectCurrentChapter, 300)
 
   // Re-position on resize
   window.addEventListener('resize', () => {

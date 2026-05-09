@@ -150,6 +150,9 @@ export async function drawWorldMap(data) {
     const yearData = getDataForYear(data, currentYear)
     const sorted = yearData.sort((a, b) => cfg.accessor(b) - cfg.accessor(a))
     const top3 = sorted.slice(0, 3)
+    const median = d3.median(yearData, d => cfg.accessor(d))
+    const topVal = top3[0] ? cfg.accessor(top3[0]) : null
+    const multiplier = (median && topVal) ? (topVal / median) : null
 
     const insightContainer = document.getElementById('map-insight')
     if (insightContainer) {
@@ -170,6 +173,14 @@ export async function drawWorldMap(data) {
             </li>
           `).join('')}
         </ol>
+        ${median != null ? `
+        <div class="mi-median" title="Middle value across all scored countries this year. Half of countries score above, half below.">
+          <span class="mi-median-label">Global median</span>
+          <span class="mi-median-bar"><span class="mi-median-fill" style="width:${Math.min(100, (median / (cfg.domain[1] || 1)) * 100).toFixed(1)}%"></span></span>
+          <span class="mi-median-val">${median.toFixed(3)}</span>
+        </div>
+        ${multiplier ? `<div class="mi-median-note">Top country is <strong>${multiplier.toFixed(1)}×</strong> the median</div>` : ''}
+        ` : ''}
         <div class="mi-footer">
           <span class="mi-dot" style="background:${cfg.accent}"></span>
           <span>Viewing: ${cfg.shortLabel}</span>

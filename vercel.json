@@ -7,8 +7,7 @@
     {
       "source": "/sdrs_data.json",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" },
-        { "key": "Content-Encoding", "value": "gzip" }
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
       ]
     },
     {

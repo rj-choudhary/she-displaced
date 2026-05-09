@@ -12,9 +12,14 @@ const SLIDER_KEYS = ['climate', 'adaptive', 'gender', 'disaster']
 const WEIGHT_KEYS = ['w_v', 'w_r', 'w_g', 'w_d']  // maps to slider order
 
 const REGION_COLORS = {
-  'Sub-Saharan Africa':'#E8614A','South Asia':'#E8A84A','MENA':'#C0392B',
-  'East Asia':'#2AADAD','Latin America':'#8B5CF6','Europe':'#1A7A7A',
-  'North America':'#059669','Oceania':'#0EA5E9','Central Asia':'#F59E0B','Other':'#9CA3AF',
+  'Sub-Saharan Africa':        '#E8614A',
+  'South Asia':                '#E8A84A',
+  'MENA':                      '#C0392B',
+  'East Asia & Pacific':       '#2AADAD',
+  'Latin America & Caribbean': '#8B5CF6',
+  'Europe':                    '#1A7A7A',
+  'North America':             '#059669',
+  'Central Asia':              '#F59E0B',
 }
 
 export function initLab(data) {
@@ -28,7 +33,7 @@ export function initLab(data) {
   )
 
   if (!year2025.length) {
-    console.warn('[lab] No 2025 data with normalized components')
+    if (import.meta.env.DEV) console.warn('[lab] No 2025 data with normalized components')
     return
   }
 

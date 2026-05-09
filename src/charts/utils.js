@@ -12,16 +12,14 @@ export const COLORS = {
 }
 
 export const REGION_COLORS = {
-  'Sub-Saharan Africa': '#E8614A',
-  'South Asia':         '#E8A84A',
-  'MENA':               '#C0392B',
-  'East Asia':          '#2AADAD',
-  'Latin America':      '#8B5CF6',
-  'Europe':             '#1A7A7A',
-  'North America':      '#059669',
-  'Oceania':            '#0EA5E9',
-  'Central Asia':       '#F59E0B',
-  'Other':              '#9CA3AF',
+  'Sub-Saharan Africa':        '#E8614A',
+  'South Asia':                '#E8A84A',
+  'MENA':                      '#C0392B',
+  'East Asia & Pacific':       '#2AADAD',
+  'Latin America & Caribbean': '#8B5CF6',
+  'Europe':                    '#1A7A7A',
+  'North America':             '#059669',
+  'Central Asia':              '#F59E0B',
 }
 
 export function showTooltip(tooltipEl, html, event) {

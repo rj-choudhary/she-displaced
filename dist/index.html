@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-C6ZQ2Gf8.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-7COTucw6.css">
+  <script type="module" crossorigin src="/assets/index-BUSdP4nJ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Cq-Auztd.css">
 </head>
 <body>
 
@@ -108,7 +108,7 @@
       <div class="hero-stats">
         <div class="stat"><span class="stat-num" id="stat-countries">159</span><span class="stat-label">Countries Scored</span></div>
         <div class="stat"><span class="stat-num" id="stat-years">20</span><span class="stat-label">Years of Data</span></div>
-        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk<span class="stat-asterisk" title="High Risk = SDRS ≥ 0.55 in 2025. These countries score in the top quintile of the She Displacement Risk Score, indicating compounding climate vulnerability and gender inequality.">*</span></span></div>
+        <div class="stat"><span class="stat-num" id="stat-top">29</span><span class="stat-label">Countries at High Risk<span class="stat-asterisk" title="High Risk = SDRS ≥ 0.60 in 2025 (top 20% / quintile globally). These 29 countries score at or above the 80th percentile on the She Displacement Risk Score, indicating compounding climate vulnerability and gender inequality.">*</span></span></div>
       </div>
       <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth'})">
         Explore the Data ↓
@@ -263,6 +263,13 @@
     <div id="radar-view-continental" class="radar-view active">
       <div id="continental-grid"></div>
       <div id="continental-tooltip" class="tooltip hidden"></div>
+      <div class="radar-inline-legend">
+        <span class="ril-title">How to read</span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(42,173,173,0.35); border-color:rgba(42,173,173,0.6)"></span>Climate <em>(vulnerability, food, water)</em></span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,97,74,0.35); border-color:rgba(232,97,74,0.6)"></span>Gender <em>(penalty, political, economic)</em></span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,168,74,0.35); border-color:rgba(232,168,74,0.6)"></span>Readiness <em>(adaptive gap, readiness)</em></span>
+        <span class="ril-hint">Larger polygon = higher combined risk · axes fixed 0→1</span>
+      </div>
     </div>
 
     <!-- LEVEL 2: Country Comparison -->
@@ -460,15 +467,14 @@
             <span class="tyd-label">YEAR</span>
             <span class="tyd-value" id="bubble-year-display">2006</span>
           </div>
-          <div class="timeline-slider-wrap">
+          <div class="timeline-slider-wrap" id="timeline-slider-wrap">
+            <div class="timeline-track-bg"></div>
             <div class="timeline-progress-fill" id="timeline-progress-fill"></div>
+            <div class="timeline-thumb" id="timeline-thumb"></div>
             <input type="range" id="bubble-year-slider" class="timeline-slider" min="2006" max="2025" value="2006" step="1" />
             <div class="timeline-ticks">
-              <span>2006</span>
-              <span>2010</span>
-              <span>2015</span>
-              <span>2020</span>
-              <span>2025</span>
+              <span class="tick-start">2006</span>
+              <span class="tick-end">2025</span>
             </div>
           </div>
         </div>
@@ -479,40 +485,79 @@
           <input type="text" id="bubble-country-input" placeholder="Search country…" autocomplete="off" />
           <div id="bubble-country-dropdown" class="country-dropdown hidden"></div>
         </div>
-        <button id="bubble-clear-country" class="action-btn secondary" style="font-size:12px;padding:6px 12px">✕ Reset</button>
       </div>
-      <div id="velocity-legend" class="bubble-velocity-legend">
-        <span class="vel-item"><span class="vel-dot" style="background:#C0392B"></span>▲ Risk rising</span>
-        <span class="vel-item"><span class="vel-dot" style="background:#9CA3AF"></span>● Stable</span>
-        <span class="vel-item"><span class="vel-dot" style="background:#0D9488"></span>▼ Improving</span>
-      </div>
+      <div id="velocity-legend" class="bubble-velocity-legend" style="display:none"></div>
     </div>
 
     <div id="master-detail-layout">
       <div id="bubble-chart-container">
+        <!-- Size legend — HTML overlay above the bubble chart -->
+        <div class="bubble-size-legend">
+          <span class="bsl-label">
+            <span class="bsl-eyebrow">BUBBLE SIZE</span>
+            <span class="bsl-sub">People affected by climate disasters</span>
+          </span>
+          <span class="bsl-scale" aria-hidden="true">
+            <span class="bsl-item bsl-item-sm">
+              <span class="bsl-circle"></span>
+              <span class="bsl-tick"></span>
+              <span class="bsl-val">100K</span>
+            </span>
+            <span class="bsl-item bsl-item-md">
+              <span class="bsl-circle"></span>
+              <span class="bsl-tick"></span>
+              <span class="bsl-val">1M</span>
+            </span>
+            <span class="bsl-item bsl-item-lg">
+              <span class="bsl-circle"></span>
+              <span class="bsl-tick"></span>
+              <span class="bsl-val">10M+</span>
+            </span>
+          </span>
+        </div>
         <div id="bubble-chart"></div>
         <div id="bubble-tooltip" class="tooltip hidden"></div>
+        <!-- 3 quick-read insights directly below the bubble chart -->
+        <div id="bubble-insights-grid">
+          <div class="bi-card" id="bi-crisis">
+            <span class="bi-icon" style="background:rgba(192,57,43,0.18); color:#C0392B">⚠</span>
+            <div class="bi-content"></div>
+          </div>
+          <div class="bi-card" id="bi-top">
+            <span class="bi-icon" style="background:rgba(232,97,74,0.18); color:#E8614A">▲</span>
+            <div class="bi-content"></div>
+          </div>
+          <div class="bi-card" id="bi-gap">
+            <span class="bi-icon" style="background:rgba(42,173,173,0.18); color:#2AADAD">⇔</span>
+            <div class="bi-content"></div>
+          </div>
+        </div>
       </div>
       <div id="drilldown-panel">
         <div id="drilldown-header">
-          <div id="drilldown-title" class="drilldown-title">Top 12 Highest-Risk Countries</div>
-          <div id="drilldown-subtitle" class="drilldown-subtitle">Click a country in the scatter plot to drill down</div>
+          <div id="drilldown-title" class="drilldown-title">Regional Risk Trajectories</div>
+          <div id="drilldown-subtitle" class="drilldown-subtitle">Mean SDRS by region · click a bubble for country detail</div>
         </div>
         <div id="drilldown-chart"></div>
         <div id="drilldown-tooltip" class="tooltip hidden"></div>
         <div id="drilldown-legend">
-          <span class="dl-item"><span class="dl-line solid"></span>SDRS Score</span>
-          <span class="dl-item"><span class="dl-line dashed coral"></span>Gender Penalty</span>
-          <span class="dl-item"><span class="dl-line dashed teal"></span>Climate Vulnerability</span>
-          <span class="dl-item dl-benchmark"><span class="dl-band"></span>Global Median</span>
+          <!-- World view legend — shown by default -->
+          <div class="dl-group dl-world">
+            <span class="dl-item"><span class="dl-line solid regional-swatch"></span>Regional mean SDRS</span>
+            <span class="dl-item dl-benchmark"><span class="dl-band"></span>Global Median</span>
+          </div>
+          <!-- Country view legend — shown when a country is selected -->
+          <div class="dl-group dl-country">
+            <span class="dl-item"><span class="dl-line solid"></span>SDRS Score</span>
+            <span class="dl-item"><span class="dl-line dashed coral"></span>Gender Penalty</span>
+            <span class="dl-item"><span class="dl-line dashed teal"></span>Climate Vulnerability</span>
+            <span class="dl-item dl-benchmark"><span class="dl-band"></span>Global Median</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div id="bubble-insights-bar">
-      <div class="bi-item" id="bi-crisis"></div>
-      <div class="bi-item" id="bi-top"></div>
-      <div class="bi-item" id="bi-gap"></div>
       <div class="bi-item" id="bi-selected" style="display:none"></div>
     </div>
   </section>
@@ -630,6 +675,7 @@
     </div>
     <div id="hope-chart-container">
       <div id="hope-chart"></div>
+      <aside id="hope-blueprint" class="hope-blueprint"></aside>
       <div id="hope-tooltip" class="tooltip hidden"></div>
     </div>
   </section>
@@ -646,15 +692,15 @@
         </div>
         <div class="c-stat">
           <div class="c-num">150M</div>
-          <div class="c-label">Women at Risk</div>
+          <div class="c-label">Women at Risk<span class="c-cite" title="Source: UN Women (2022), 'Gender Equality and Climate Change' — estimates that 158–189M women and girls live in areas of elevated climate-displacement risk. We use the lower-bound rounded figure.">†</span></div>
         </div>
         <div class="c-stat">
           <div class="c-num">29</div>
           <div class="c-label">In Compounding Crisis</div>
         </div>
         <div class="c-stat">
-          <div class="c-num">15</div>
-          <div class="c-label">Resilience Champions</div>
+          <div class="c-num">74</div>
+          <div class="c-label">Champions Closing the Gender Gap</div>
         </div>
       </div>
       <p class="closing-credit">Built for Data Connect Conference · Women in Analytics 2026</p>
@@ -718,11 +764,10 @@
                 <option>Sub-Saharan Africa</option>
                 <option>South Asia</option>
                 <option>MENA</option>
-                <option>East Asia</option>
-                <option>Latin America</option>
+                <option>East Asia & Pacific</option>
+                <option>Latin America & Caribbean</option>
                 <option>Europe</option>
                 <option>North America</option>
-                <option>Oceania</option>
                 <option>Central Asia</option>
               </select>
             </div>
@@ -956,6 +1001,22 @@
             </div>
             <p style="margin-top:12px;font-size:13px">
               <strong>LOCF (Last Observation Carried Forward)</strong> assumes that a country's climate vulnerability and readiness did not materially change between 2023 and 2025. This is a conservative assumption — structural indicators like infrastructure, governance, and ecosystem sensitivity shift slowly. The Gender Gap and Disaster Burden components use observed 2025 data, ensuring the SDRS still captures recent changes in gender policy and acute climate events.
+            </p>
+          </div>
+
+          <!-- Country Coverage -->
+          <div class="weight-rationale" style="margin-top:12px;border-left-color:var(--teal)">
+            <h3>Country Coverage</h3>
+            <p>
+              The dataset contains <strong>187 country codes</strong> across all sources. Of these, <strong>159 countries have sufficient data across all four SDRS components (ND-GAIN vulnerability, ND-GAIN readiness, WEF Gender Gap Index, EM-DAT disasters) to compute a complete SDRS score</strong>. The remaining 28 countries have partial coverage (typically missing Gender Gap Index data for small island states or microstates) and appear in component-specific charts but are excluded from the composite SDRS. The "159 countries scored" figure used throughout refers to countries with full SDRS coverage.
+            </p>
+          </div>
+
+          <!-- High Risk Definition -->
+          <div class="weight-rationale" style="margin-top:12px;border-left-color:var(--coral)">
+            <h3>"High Risk" Threshold Definition</h3>
+            <p>
+              Throughout the dashboard, "high risk" refers to countries with <strong>SDRS ≥ 0.60 in 2025</strong> — which corresponds to the <strong>top 20% (quintile)</strong> of all scored countries. As of 2025, <strong>29 countries</strong> cross this threshold, representing the compounding-crisis set where both climate vulnerability and gender inequality are structurally deep. The 0.60 cutoff was chosen because it aligns with the quintile boundary and separates countries where the SDRS is driven by <em>compounding</em> stressors (multi-component elevation) versus single-component risk.
             </p>
           </div>
         </div>

@@ -24,7 +24,6 @@ export function drawBubbleChart(data) {
   const velLegend  = document.getElementById('velocity-legend')
   const countryInp = document.getElementById('bubble-country-input')
   const countryDd  = document.getElementById('bubble-country-dropdown')
-  const clearBtn   = document.getElementById('bubble-clear-country')
 
   const sdrsData = data.filter(d => d.sdrs != null && d.gender_penalty != null)
   const years    = [...new Set(sdrsData.map(d => d.year))].sort()
@@ -72,6 +71,55 @@ export function drawBubbleChart(data) {
   })
   const top12 = avgSdrs.sort((a,b)=>b.avg-a.avg).slice(0,10)
 
+  // ── Regional time series (mean SDRS per region per year) ──────
+  const REGION_COLORS = {
+    'Sub-Saharan Africa':        '#E8614A',
+    'South Asia':                '#E8A84A',
+    'MENA':                      '#C0392B',
+    'East Asia & Pacific':       '#2AADAD',
+    'Latin America & Caribbean': '#8B5CF6',
+    'Europe':                    '#1A7A7A',
+    'Central Asia':              '#F59E0B',
+    'North America':             '#059669',
+  }
+  // Regions shown as default lines in the World View chart (8 World Bank groupings)
+  const REGION_ORDER_DEFAULT = [
+    'Sub-Saharan Africa', 'South Asia', 'MENA', 'East Asia & Pacific',
+    'Latin America & Caribbean', 'Europe', 'Central Asia', 'North America'
+  ]
+  // All regions — used for country-focus reference line (must cover every country)
+  const ALL_REGIONS = REGION_ORDER_DEFAULT
+
+  function buildRegionalSeries(region) {
+    const regionData = sdrsData.filter(d => d.region === region && d.sdrs != null)
+    if (!regionData.length) return null
+    const byYear = d3.group(regionData, d => d.year)
+    const records = years.map(yr => {
+      const yrRecs = byYear.get(yr) || []
+      return {
+        year: yr,
+        sdrs: yrRecs.length ? d3.mean(yrRecs, d => d.sdrs) : null,
+        count: yrRecs.length,
+      }
+    }).filter(d => d.sdrs != null)
+    if (!records.length) return null
+    return {
+      region,
+      color: REGION_COLORS[region] || '#9CA3AF',
+      records,
+      latest: records[records.length - 1],
+    }
+  }
+
+  const regionalSeries = REGION_ORDER_DEFAULT.map(buildRegionalSeries).filter(Boolean)
+
+  // Regional series lookup by region name (covers ALL regions for country drilldown)
+  const regionalByName = {}
+  ALL_REGIONS.forEach(region => {
+    const series = buildRegionalSeries(region)
+    if (series) regionalByName[region] = series
+  })
+
   // ── Global median ─────────────────────────────────────────────
   const globalMedian = {}
   years.forEach(yr => { globalMedian[yr] = d3.median(getDataForYear(sdrsData,yr), d=>d.sdrs)||0 })
@@ -92,11 +140,11 @@ export function drawBubbleChart(data) {
   })
 
   // ── SCATTER SVG ───────────────────────────────────────────────
-  const sm = {top:40,right:20,bottom:50,left:58}
-  const SW=640, SH=440, siW=SW-sm.left-sm.right, siH=SH-sm.top-sm.bottom
+  const sm = {top:14,right:20,bottom:36,left:58}
+  const SW=640, SH=400, siW=SW-sm.left-sm.right, siH=SH-sm.top-sm.bottom
 
   const scatterSvg = d3.select(container).append('svg')
-    .attr('viewBox',`0 0 ${SW} ${SH}`).style('width','100%').style('height','440px')
+    .attr('viewBox',`0 0 ${SW} ${SH}`).style('width','100%').style('height','400px')
     .attr('preserveAspectRatio','xMidYMid meet')
   const sg = scatterSvg.append('g').attr('transform',`translate(${sm.left},${sm.top})`)
 
@@ -148,6 +196,9 @@ export function drawBubbleChart(data) {
     .text('Gender Penalty →  Higher = More Inequality')
   scatterSvg.append('text').attr('transform','rotate(-90)').attr('x',-(sm.top+siH/2)).attr('y',14)
     .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',10).text('Climate Vulnerability →')
+
+  // ── Bubble size legend is rendered in HTML above the chart (see index.html) ──
+  // Leave SVG margin normal — no inline legend
 
   const bubblesG = sg.append('g').attr('class','bubbles')
   const ringsG   = sg.append('g').attr('class','rings-group').style('pointer-events','none')
@@ -202,86 +253,210 @@ export function drawBubbleChart(data) {
   const linesG = dg.append('g').attr('class','dd-lines')
 
 
-  // ── Default: Top 12 lines ─────────────────────────────────────
+  // ── Default: Regional time series (7 continents) ──────────────
   function drawTop12() {
-    ddTitle.textContent    = 'Top 10 Highest-Risk Countries'
-    ddSubtitle.textContent = 'Click a bubble to drill into a country\'s journey'
+    ddTitle.textContent    = 'Regional Risk Trajectories'
+    ddSubtitle.textContent = 'Mean SDRS by region · click a bubble for country detail'
     linesG.selectAll('*').remove()
-    const cs = d3.scaleOrdinal().domain(top12.map(d=>d.iso3)).range(LINE_COLORS)
+    const legendEl = document.getElementById('drilldown-legend')
+    if (legendEl) legendEl.classList.remove('mode-country')
 
     // Pre-compute label positions with collision avoidance
-    const labelData = top12.map(c => {
-      const last = c.records[c.records.length-1]
-      return { c, last, rawY: yDD(last.sdrs) }
+    const labelData = regionalSeries.map(r => {
+      return { r, rawY: yDD(r.latest.sdrs) }
     }).sort((a,b) => a.rawY - b.rawY)
 
-    // Push labels apart if they're within 10px of each other
-    const minGap = 10
+    const minGap = 11
     for (let i = 1; i < labelData.length; i++) {
       if (labelData[i].rawY - labelData[i-1].rawY < minGap) {
         labelData[i].rawY = labelData[i-1].rawY + minGap
       }
     }
     const labelY = {}
-    labelData.forEach(d => { labelY[d.c.iso3] = d.rawY })
+    labelData.forEach(d => { labelY[d.r.region] = d.rawY })
 
-    top12.forEach((c,ci) => {
-      const lf = d3.line().x(d=>xDD(d.year)).y(d=>yDD(d.sdrs)).curve(d3.curveCatmullRom).defined(d=>d.sdrs!=null)
-      const path = linesG.append('path').datum(c.records)
-        .attr('fill','none').attr('stroke',cs(c.iso3)).attr('stroke-width',1.8).attr('opacity',0.75).attr('d',lf)
+    regionalSeries.forEach((r, ri) => {
+      const lf = d3.line()
+        .x(d => xDD(d.year))
+        .y(d => yDD(d.sdrs))
+        .curve(d3.curveCatmullRom)
+        .defined(d => d.sdrs != null)
+
+      const path = linesG.append('path').datum(r.records)
+        .attr('fill', 'none')
+        .attr('stroke', r.color)
+        .attr('stroke-width', 2.2)
+        .attr('opacity', 0.85)
+        .attr('d', lf)
+
+      // Running-line reveal
       const len = path.node().getTotalLength()
-      path.attr('stroke-dasharray',`${len} ${len}`).attr('stroke-dashoffset',len)
-        .transition().duration(1200).delay(ci*80).ease(d3.easeLinear).attr('stroke-dashoffset',0)
-      const last = c.records[c.records.length-1]
+      path.attr('stroke-dasharray', `${len} ${len}`)
+          .attr('stroke-dashoffset', len)
+          .transition().duration(1100).delay(ri * 120).ease(d3.easeLinear)
+          .attr('stroke-dashoffset', 0)
 
-      // Label with collision-avoided y position
+      // Endpoint dot
+      const last = r.latest
+      linesG.append('circle')
+        .attr('cx', xDD(last.year))
+        .attr('cy', yDD(last.sdrs))
+        .attr('r', 3.5)
+        .attr('fill', r.color)
+        .attr('opacity', 0)
+        .transition().duration(400).delay(ri * 120 + 900)
+        .attr('opacity', 1)
+
+      // Region label at end of line
       linesG.append('text')
-        .attr('x', xDD(last.year)+5)
-        .attr('y', labelY[c.iso3] + 3)
-        .attr('fill', cs(c.iso3))
-        .attr('font-size', 8)
-        .text(c.name.length>9 ? c.name.slice(0,8)+'…' : c.name)
+        .attr('x', xDD(last.year) + 7)
+        .attr('y', labelY[r.region] + 3)
+        .attr('fill', r.color)
+        .attr('font-size', 9)
+        .attr('font-weight', '600')
+        .text(r.region.length > 14 ? r.region.slice(0, 12) + '…' : r.region)
 
-      linesG.append('path').datum(c.records).attr('fill','none').attr('stroke','transparent').attr('stroke-width',10).attr('d',lf)
-        .on('mousemove',e=>{showTooltip(ddTooltip,tooltipHtml(c.name,[['Avg SDRS',c.avg.toFixed(3)],['Latest',last.sdrs.toFixed(3)],['Region',c.region]]),e);path.attr('stroke-width',3).attr('opacity',1)})
-        .on('mouseleave',()=>{hideTooltip(ddTooltip);path.attr('stroke-width',1.8).attr('opacity',0.75)})
+      // Fat invisible hit area for easier hover
+      linesG.append('path').datum(r.records)
+        .attr('fill', 'none')
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', 12)
+        .attr('d', lf)
+        .on('mousemove', e => {
+          const first = r.records[0]
+          const change = last.sdrs - first.sdrs
+          showTooltip(ddTooltip, tooltipHtml(r.region, [
+            ['Latest (' + last.year + ')', last.sdrs.toFixed(3)],
+            ['First (' + first.year + ')', first.sdrs.toFixed(3)],
+            ['Change', (change >= 0 ? '+' : '') + change.toFixed(3)],
+            ['Countries', last.count],
+          ]), e)
+          path.attr('stroke-width', 3.5).attr('opacity', 1)
+        })
+        .on('mouseleave', () => {
+          hideTooltip(ddTooltip)
+          path.attr('stroke-width', 2.2).attr('opacity', 0.85)
+        })
     })
   }
 
-  // ── Country drill-down: 3-line decomposition ──────────────────
+  // ── Country drill-down: 3-line decomposition + regional reference ──
   function drawCountryDrilldown(iso) {
     const recs = sdrsData.filter(d=>d.iso3===iso).sort((a,b)=>a.year-b.year)
     if (!recs.length) return
     const name = recs[0].name
+    const regionName = recs[0].region
     ddTitle.textContent    = name
-    ddSubtitle.textContent = 'SDRS decomposition — what drove the change?'
+    ddSubtitle.textContent = 'SDRS decomposition vs regional average'
     linesG.selectAll('*').remove()
+    const legendEl = document.getElementById('drilldown-legend')
+    if (legendEl) legendEl.classList.add('mode-country')
+
+    // Draw regional reference line FIRST (so it sits beneath country lines)
+    const regionSeries = regionalByName[regionName]
+    if (regionSeries && regionSeries.records.length) {
+      const regColor = regionSeries.color
+      const rlf = d3.line()
+        .x(d => xDD(d.year))
+        .y(d => yDD(d.sdrs))
+        .curve(d3.curveCatmullRom)
+
+      // Soft filled band — subtle area under regional average for depth
+      const rArea = d3.area()
+        .x(d => xDD(d.year))
+        .y0(yDD(0.1))
+        .y1(d => yDD(d.sdrs))
+        .curve(d3.curveCatmullRom)
+
+      // Very subtle regional area fill
+      linesG.append('path').datum(regionSeries.records)
+        .attr('fill', regColor)
+        .attr('opacity', 0.05)
+        .attr('d', rArea)
+
+      // Dotted regional line
+      const regPath = linesG.append('path').datum(regionSeries.records)
+        .attr('fill', 'none')
+        .attr('stroke', regColor)
+        .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '2,3')
+        .attr('opacity', 0.55)
+        .attr('d', rlf)
+
+      // Running reveal
+      const rLen = regPath.node().getTotalLength()
+      regPath
+        .attr('stroke-dasharray', rLen + ' ' + rLen)
+        .attr('stroke-dashoffset', rLen)
+        .transition().duration(900).ease(d3.easeLinear)
+        .attr('stroke-dashoffset', 0)
+        .on('end', function() {
+          d3.select(this).attr('stroke-dasharray', '2,3')
+        })
+
+      // Region label at end
+      const rLast = regionSeries.latest
+      linesG.append('text')
+        .attr('x', xDD(rLast.year) + 5)
+        .attr('y', yDD(rLast.sdrs) + 3)
+        .attr('fill', regColor)
+        .attr('font-size', 8)
+        .attr('font-weight', '600')
+        .attr('opacity', 0)
+        .text(regionName.length > 14 ? regionName.slice(0, 12) + '…' : regionName)
+        .transition().duration(400).delay(800).attr('opacity', 0.75)
+
+      // Hover hit for regional line
+      linesG.append('path').datum(regionSeries.records)
+        .attr('fill', 'none')
+        .attr('stroke', 'transparent')
+        .attr('stroke-width', 10)
+        .attr('d', rlf)
+        .on('mousemove', e => {
+          const first = regionSeries.records[0]
+          const change = rLast.sdrs - first.sdrs
+          showTooltip(ddTooltip, tooltipHtml(regionName + ' (regional avg)', [
+            ['Latest', rLast.sdrs.toFixed(3)],
+            ['First', first.sdrs.toFixed(3)],
+            ['Change', (change >= 0 ? '+' : '') + change.toFixed(3)],
+          ]), e)
+        })
+        .on('mouseleave', () => hideTooltip(ddTooltip))
+    }
 
     const series = [
       {key:'sdrs',           label:'SDRS Score',           color:'#E8614A', w:2.5, dash:null},
       {key:'gender_penalty', label:'Gender Penalty',        color:'#8B5CF6', w:1.5, dash:'5,3'},
       {key:'vulnerability',  label:'Climate Vulnerability', color:'#2AADAD', w:1.5, dash:'5,3'},
     ]
-    series.forEach(s => {
+    series.forEach((s, si) => {
       const valid = recs.filter(d=>d[s.key]!=null)
       if (!valid.length) return
       const lf = d3.line().x(d=>xDD(d.year)).y(d=>yDD(d[s.key])).curve(d3.curveCatmullRom)
       const path = linesG.append('path').datum(valid)
         .attr('fill','none').attr('stroke',s.color).attr('stroke-width',s.w)
-        .attr('stroke-dasharray',s.dash||'none').attr('opacity',0).attr('d',lf)
-      path.transition().duration(500).attr('opacity',s.key==='sdrs'?0.95:0.7)
+        .attr('stroke-dasharray',s.dash||'none').attr('opacity',s.key==='sdrs'?0.95:0.7).attr('d',lf)
+
+      // Running line draw-in
+      const totalLen = path.node().getTotalLength()
+      const origDash = s.dash
+      path
+        .attr('stroke-dasharray', totalLen + ' ' + totalLen)
+        .attr('stroke-dashoffset', totalLen)
+        .transition().duration(1100).delay(si * 150).ease(d3.easeLinear)
+        .attr('stroke-dashoffset', 0)
+        .on('end', function() {
+          d3.select(this).attr('stroke-dasharray', origDash || 'none')
+        })
+
       const last = valid[valid.length-1]
       linesG.append('circle').attr('cx',xDD(last.year)).attr('cy',yDD(last[s.key])).attr('r',3.5)
-        .attr('fill',s.color).attr('opacity',0).transition().duration(500).attr('opacity',1)
+        .attr('fill',s.color).attr('opacity',0)
+        .transition().duration(400).delay(si * 150 + 900).attr('opacity',1)
       linesG.append('path').datum(valid).attr('fill','none').attr('stroke','transparent').attr('stroke-width',12).attr('d',lf)
         .on('mousemove',e=>{showTooltip(ddTooltip,tooltipHtml(s.label+' — '+name,[['Latest',last[s.key].toFixed(3)],['First',valid[0][s.key].toFixed(3)],['Change',((last[s.key]-valid[0][s.key])>=0?'+':'')+(last[s.key]-valid[0][s.key]).toFixed(3)]]),e)})
         .on('mouseleave',()=>hideTooltip(ddTooltip))
     })
-    const vel = velocityMap[iso]||0
-    const vc = vel>0.002?'#C0392B':vel<-0.002?'#0D9488':'#9CA3AF'
-    linesG.append('text').attr('x',diW-4).attr('y',12).attr('text-anchor','end')
-      .attr('fill',vc).attr('font-size',9).attr('font-weight','700')
-      .text((vel>0.002?'⚠ Rising':vel<-0.002?'✓ Improving':'→ Stable')+' ('+(vel>=0?'+':'')+vel.toFixed(4)+'/yr)')
   }
 
   // ── Scatter render ────────────────────────────────────────────
@@ -408,48 +583,11 @@ export function drawBubbleChart(data) {
       }
     }
 
-    // Velocity glyphs (▲ rising, ● stable, ▼ improving) — only on bubbles large enough
-    const glyphData = yearData.filter(d => Math.max(rSc(d.total_affected||0),4) >= 7)
-    bubblesG.selectAll('text.vel-glyph').data(glyphData, d=>d.iso3)
-      .join(
-        enter => enter.append('text').attr('class','vel-glyph')
-          .attr('text-anchor','middle')
-          .attr('dominant-baseline','central')
-          .attr('pointer-events','none')
-          .attr('font-size', d => Math.max(rSc(d.total_affected||0),4) >= 12 ? 8 : 6)
-          .attr('font-weight','700')
-          .attr('fill','rgba(255,255,255,0.9)'),
-        update => update
-          .attr('font-size', d => Math.max(rSc(d.total_affected||0),4) >= 12 ? 8 : 6)
-      )
-      .attr('x', d=>xSc(d.gender_penalty))
-      .attr('y', d=>ySc(d.vulnerability))
-      .attr('opacity', d => {
-        if (!activeIso) return 0.9
-        return d.iso3===activeIso ? 1 : 0.15
-      })
-      .text(d => velGlyph(d.iso3))
+    // Velocity glyphs removed — cleaner bubble appearance
+    bubblesG.selectAll('text.vel-glyph').remove()
 
-    // Remove glyphs for bubbles that are now too small
-    bubblesG.selectAll('text.vel-glyph').data(glyphData, d=>d.iso3)
-      .exit().remove()
-
-    // Country journey path (country mode)
+    // Country journey path removed — cleaner visualization
     journeyG.selectAll('*').remove()
-    if (viewMode==='country' && focusIso) {
-      const journey = sdrsData.filter(d=>d.iso3===focusIso && d.year<=year)
-        .sort((a,b)=>a.year-b.year)
-      if (journey.length>1) {
-        const lf = d3.line().x(d=>xSc(d.gender_penalty)).y(d=>ySc(d.vulnerability)).curve(d3.curveCatmullRom)
-        journeyG.append('path').datum(journey)
-          .attr('fill','none').attr('stroke','#E8614A').attr('stroke-width',2)
-          .attr('opacity',0.7).attr('stroke-dasharray','4,2').attr('d',lf)
-        journey.forEach((pt,i) => {
-          journeyG.append('circle').attr('cx',xSc(pt.gender_penalty)).attr('cy',ySc(pt.vulnerability)).attr('r',2.5)
-            .attr('fill','#E8614A').attr('opacity',0.3+(i/journey.length)*0.6)
-        })
-      }
-    }
 
     // Resilience outlier
     annotG.selectAll('*').remove()
@@ -530,15 +668,10 @@ export function drawBubbleChart(data) {
       })
       .on('click', function(event,d) {
         event.stopPropagation()
-        if (viewMode==='world') {
-          clickedIso = clickedIso===d.iso3 ? null : d.iso3
-          if (clickedIso) drawCountryDrilldown(clickedIso)
-          else drawTop12()
-          renderBubbles(currentYear, false)
-        } else {
-          // In country mode, clicking sets the focus country
-          setFocusCountry(d.iso3, d.name)
-        }
+        // Always switch to Country Focus when clicking a bubble
+        focusIso = d.iso3  // set before calling setViewMode to skip default-country logic
+        setViewMode('country')
+        setFocusCountry(d.iso3, d.name)
       })
   }
 
@@ -548,7 +681,6 @@ export function drawBubbleChart(data) {
     vmWorld.classList.toggle('active', mode==='world')
     vmCountry.classList.toggle('active', mode==='country')
     focusCtrl.classList.toggle('hidden', mode==='world')
-    velLegend.style.display = mode==='world' ? '' : 'none'
 
     if (mode==='world') {
       focusIso = null
@@ -606,15 +738,6 @@ export function drawBubbleChart(data) {
   })
   document.addEventListener('click',e=>{ if(!countryInp.contains(e.target)&&!countryDd.contains(e.target)) countryDd.classList.add('hidden') })
 
-  clearBtn.addEventListener('click', ()=>{
-    focusIso=null; countryInp.value=''
-    journeyG.selectAll('*').remove()
-    ddTitle.textContent='Country Focus'; ddSubtitle.textContent='Search or click a bubble to select a country'
-    linesG.selectAll('*').remove()
-    document.getElementById('bi-selected').style.display='none'
-    renderBubbles(currentYear,false)
-  })
-
   scatterSvg.on('click',()=>{
     if (viewMode==='world' && clickedIso) { clickedIso=null; drawTop12(); renderBubbles(currentYear,false) }
   })
@@ -629,10 +752,35 @@ export function drawBubbleChart(data) {
     const fyd      = getDataForYear(sdrsData,years[0])
     const fg       = d3.max(fyd,d=>d.sdrs)-d3.min(fyd,d=>d.sdrs)
     const gc       = ((gap-fg)/fg*100).toFixed(1)
-    const set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html}
-    set('bi-crisis',`🔴 <strong>${inCrisis}</strong> of ${yearData.length} countries in <em>Compounding Crisis</em> zone in ${year}`)
-    set('bi-top',top1?`⚠️ <strong>${top1.name}</strong> highest SDRS at <strong>${top1.sdrs.toFixed(3)}</strong>`:'')
-    set('bi-gap',`📊 Resilience gap: <strong>${gap.toFixed(3)}</strong> — ${+gc>0?'▲ widened':'▼ narrowed'} <strong>${Math.abs(+gc)}%</strong> since ${years[0]}`)
+
+    const setCard = (id, bigValue, context) => {
+      const card = document.getElementById(id)
+      if (!card) return
+      const content = card.querySelector('.bi-content')
+      if (!content) return
+      content.innerHTML = `
+        <div class="bi-big">${bigValue}</div>
+        <div class="bi-ctx">${context}</div>
+      `
+    }
+
+    setCard(
+      'bi-crisis',
+      `<strong>${inCrisis}</strong> <span class="bi-unit">/ ${yearData.length}</span>`,
+      `Countries in Compounding Crisis zone in ${year}`
+    )
+    setCard(
+      'bi-top',
+      top1 ? `<strong>${top1.name}</strong>` : '—',
+      top1 ? `Highest SDRS at <span class="bi-val">${top1.sdrs.toFixed(3)}</span>` : ''
+    )
+    const changeLabel = +gc > 0 ? '▲ widened' : +gc < 0 ? '▼ narrowed' : '→ unchanged'
+    const changeColor = +gc > 0 ? '#C0392B' : +gc < 0 ? '#0D9488' : '#9CA3AF'
+    setCard(
+      'bi-gap',
+      `<strong>${gap.toFixed(3)}</strong>`,
+      `Resilience gap — <span style="color:${changeColor};font-weight:600">${changeLabel} ${Math.abs(+gc)}%</span> since ${years[0]}`
+    )
   }
 
   // ── Year control ──────────────────────────────────────────────
@@ -641,14 +789,17 @@ export function drawBubbleChart(data) {
   const pauseIcon      = playBtn.querySelector('.pause-icon')
   const progressRing   = playBtn.querySelector('.play-progress-fg')
   const progressFill   = document.getElementById('timeline-progress-fill')
+  const thumbEl        = document.getElementById('timeline-thumb')
   const RING_CIRCUMF   = 100.53  // 2π × 16
 
   function updateProgress(year) {
     const pct = (year - years[0]) / (years[years.length-1] - years[0])
-    // Progress ring (decreases dashoffset as progress increases)
+    // Progress ring on play button
     if (progressRing) progressRing.style.strokeDashoffset = RING_CIRCUMF * (1 - pct)
-    // Linear fill under slider
+    // Linear fill — pure percentage, edge to edge
     if (progressFill) progressFill.style.width = (pct * 100) + '%'
+    // Custom thumb position — 0% = left edge, 100% = right edge
+    if (thumbEl) thumbEl.style.left = (pct * 100) + '%'
   }
 
   function togglePlayIcons(isPlaying) {
@@ -694,7 +845,40 @@ export function drawBubbleChart(data) {
     setYear(+slider.value)
   })
 
-  // Initialize progress on first render
+  // Custom pointer-based slider — works reliably across browsers
+  const sliderWrap = document.getElementById('timeline-slider-wrap')
+  if (sliderWrap) {
+    let isDragging = false
+
+    function yearFromPointer(clientX) {
+      const rect = sliderWrap.getBoundingClientRect()
+      let pct = (clientX - rect.left) / rect.width
+      pct = Math.max(0, Math.min(1, pct))
+      const yearIdx = Math.round(pct * (years.length - 1))
+      return years[Math.max(0, Math.min(years.length - 1, yearIdx))]
+    }
+
+    function onPointerDown(e) {
+      isDragging = true
+      stopPlayback()
+      setYear(yearFromPointer(e.clientX))
+      e.preventDefault()
+    }
+    function onPointerMove(e) {
+      if (!isDragging) return
+      setYear(yearFromPointer(e.clientX))
+    }
+    function onPointerUp() { isDragging = false }
+
+    sliderWrap.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
+  }
+
+  // Initialize progress on first render — force slider to start year
+  slider.value = currentYear
+  yearDisp.textContent = currentYear
   updateProgress(currentYear)
 
   // Initial

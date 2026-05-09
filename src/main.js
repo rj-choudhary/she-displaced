@@ -12,7 +12,7 @@ import { drawDisasterCharts } from './charts/disasterCharts.js'
 import { initHeroParticles } from './charts/heroParticles.js'
 
 function safe(name, fn) {
-  try { fn() } catch(e) { console.error(`[${name}] failed:`, e) }
+  try { fn() } catch(e) { if (import.meta.env.DEV) console.error(`[${name}] failed:`, e) }
 }
 
 // ── Hope: Resilience Champions ────────────────────────────────
@@ -22,9 +22,14 @@ function drawHopeChart(data) {
   if (!container) return
 
   const REGION_COLORS = {
-    'Sub-Saharan Africa':'#E8614A','South Asia':'#E8A84A','MENA':'#C0392B',
-    'East Asia':'#2AADAD','Latin America':'#8B5CF6','Europe':'#1A7A7A',
-    'North America':'#059669','Oceania':'#0EA5E9','Central Asia':'#F59E0B','Other':'#9CA3AF',
+    'Sub-Saharan Africa':        '#E8614A',
+    'South Asia':                '#E8A84A',
+    'MENA':                      '#C0392B',
+    'East Asia & Pacific':       '#2AADAD',
+    'Latin America & Caribbean': '#8B5CF6',
+    'Europe':                    '#1A7A7A',
+    'North America':             '#059669',
+    'Central Asia':              '#F59E0B',
   }
 
   const byIso = {}
@@ -49,17 +54,37 @@ function drawHopeChart(data) {
     }
   })
   champions.sort((a,b) => b.improvement - a.improvement)
-  const top15 = champions.slice(0, 15)
+  const allChampions = champions  // total count of improvers
+  const top15 = champions.slice(0, 20)
   if (!top15.length) return
 
-  const barH = 30, barGap = 8
-  const margin = { top: 24, right: 180, bottom: 36, left: 170 }
-  const W = 900, H = top15.length * (barH + barGap) + margin.top + margin.bottom
+  // ── Narrative stats for the Blueprint sidebar ───────────────────
+  const top1 = top15[0]
+  // Stats computed on ALL improvers (not just the 15 displayed) for accurate narrative
+  const genderGainers = allChampions.filter(c => c.genderGain != null && c.genderGain > 0.03).length
+  const avgYearsToRecover = d3.mean(allChampions, c => c.latestYear - c.peakYear)
+  const uniqueRegions = new Set(allChampions.map(c => c.region))
+  const biggestGenderGain = [...allChampions]
+    .filter(c => c.genderGain != null)
+    .sort((a,b) => (b.genderGain||0) - (a.genderGain||0))[0]
+
+  const barH = 26, barGap = 6
+  const margin = { top: 14, right: 110, bottom: 52, left: 130 }
+  const W = 720, H = top15.length * (barH + barGap) + margin.top + margin.bottom
 
   const svg = d3.select(container).append('svg')
     .attr('viewBox', `0 0 ${W} ${H}`)
     .style('width','100%')
     .attr('preserveAspectRatio','xMidYMid meet')
+
+  // Chart header — sits above the SVG
+  const headerHTML = `
+    <div class="hope-chart-header">
+      <span class="hch-eyebrow">Top 20 Resilience Champions</span>
+      <span class="hch-sub">Ranked by SDRS reduction since peak year</span>
+    </div>
+  `
+  container.insertAdjacentHTML('afterbegin', headerHTML)
 
   const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
   const iW = W - margin.left - margin.right
@@ -95,19 +120,20 @@ function drawHopeChart(data) {
     // Country label
     g.append('text').attr('x', -8).attr('y', y + barH/2)
       .attr('text-anchor','end').attr('dominant-baseline','middle')
-      .attr('font-size', 11).attr('fill','#374151').attr('font-weight','500')
+      .attr('font-size', 13).attr('fill','#374151').attr('font-weight','600')
       .text(c.name.length > 20 ? c.name.slice(0,18)+'…' : c.name)
 
-    // Improvement badge
-    g.append('text').attr('x', xScale(c.latest) + 8).attr('y', y + barH/2)
-      .attr('dominant-baseline','middle').attr('font-size', 10).attr('font-weight','700')
+    // Improvement badge — absolute SDRS reduction (the actual policy story)
+    g.append('text').attr('x', xScale(c.latest) + 6).attr('y', y + barH/2)
+      .attr('dominant-baseline','middle').attr('font-size', 11).attr('font-weight','700')
       .attr('fill', color)
       .text('▼ ' + c.improvement.toFixed(3))
 
     // Peak annotation
     g.append('text').attr('x', xScale(c.peak) + 4).attr('y', y + barH/2)
-      .attr('dominant-baseline','middle').attr('font-size', 8.5)
-      .attr('fill','rgba(0,0,0,0.3)')
+      .attr('dominant-baseline','middle').attr('font-size', 9)
+      .attr('font-style', 'italic')
+      .attr('fill','rgba(0,0,0,0.45)')
       .text('peak ' + c.peakYear)
 
     // Hover
@@ -115,10 +141,11 @@ function drawHopeChart(data) {
       .attr('fill','transparent').style('cursor','pointer')
       .on('mousemove', function(event) {
         if (!tooltip) return
+        const pct = (c.improvement / c.peak) * 100
         const rows = [
           ['Peak SDRS', c.peak.toFixed(3) + ' (' + c.peakYear + ')'],
           ['Current SDRS', c.latest.toFixed(3) + ' (' + c.latestYear + ')'],
-          ['Improvement', '▼ ' + c.improvement.toFixed(3)],
+          ['Reduction', '−' + c.improvement.toFixed(3) + '  (▼' + pct.toFixed(1) + '%)'],
           ['Region', c.region],
         ]
         if (c.genderGain != null && c.genderGain > 0.01)
@@ -138,6 +165,69 @@ function drawHopeChart(data) {
   svg.append('text').attr('x', margin.left+18).attr('y', ly).attr('fill','#6B7280').attr('font-size',9).text('Peak SDRS')
   svg.append('rect').attr('x', margin.left+90).attr('y', ly-8).attr('width',14).attr('height',8).attr('rx',2).attr('fill','#2AADAD').attr('opacity',0.85)
   svg.append('text').attr('x', margin.left+108).attr('y', ly).attr('fill','#6B7280').attr('font-size',9).text('Current SDRS (color = region)')
+
+  // ── Blueprint sidebar — editorial insight panel ───────────────
+  const blueprintEl = document.getElementById('hope-blueprint')
+  if (blueprintEl) {
+    const top1Color = REGION_COLORS[top1.region] || '#9CA3AF'
+    const yearsLabel = Math.round(avgYearsToRecover) + ' years'
+
+    blueprintEl.innerHTML = `
+      <div class="hbp-eyebrow">The Blueprint</div>
+      <h3 class="hbp-title">Recovery is possible.</h3>
+      <p class="hbp-lede">
+        <strong>${allChampions.length} countries</strong> have reduced their She Displacement Risk
+        since their peak year — proof that policy, not geography, determines outcomes.
+      </p>
+
+      <div class="hbp-divider"></div>
+
+      <!-- Top mover spotlight — consistent coral theme, region shown as a chip -->
+      <div class="hbp-spotlight">
+        <div class="hbp-spot-label">★ Leading Champion</div>
+        <div class="hbp-spot-name">${top1.name}</div>
+        <div class="hbp-spot-region" style="background:${top1Color}20; color:${top1Color}">${top1.region}</div>
+        <div class="hbp-spot-stats">
+          <div class="hbp-stat">
+            <div class="hbp-stat-val">▼ ${top1.improvement.toFixed(3)}</div>
+            <div class="hbp-stat-lbl">SDRS reduction</div>
+          </div>
+          <div class="hbp-stat">
+            <div class="hbp-stat-val">${top1.peakYear}</div>
+            <div class="hbp-stat-lbl">Peak year</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insight cards -->
+      <div class="hbp-cards">
+        <div class="hbp-card">
+          <div class="hbp-card-num">${genderGainers}</div>
+          <div class="hbp-card-lbl">Champions with meaningful <strong>gender gap gains</strong> (≥0.03)</div>
+        </div>
+        <div class="hbp-card">
+          <div class="hbp-card-num">${uniqueRegions.size}<span class="hbp-card-unit">/8</span></div>
+          <div class="hbp-card-lbl">Regions represented — <strong>recovery isn't region-specific</strong></div>
+        </div>
+        <div class="hbp-card">
+          <div class="hbp-card-num">${yearsLabel}</div>
+          <div class="hbp-card-lbl">Average time from peak risk to <strong>measurable recovery</strong></div>
+        </div>
+      </div>
+
+      ${biggestGenderGain && biggestGenderGain.genderGain > 0.03 ? `
+        <div class="hbp-quote">
+          <div class="hbp-quote-body">
+            <strong>${biggestGenderGain.name}</strong> closed its gender gap by
+            <span class="hbp-quote-val">+${biggestGenderGain.genderGain.toFixed(3)}</span>
+            — the single largest structural gain among champions.
+          </div>
+        </div>
+      ` : ''}
+
+      <p class="hbp-kicker">Closing the gender gap is the most effective climate defense.</p>
+    `
+  }
 }
 
 async function init() {
@@ -153,7 +243,7 @@ async function init() {
   safe('nav', () => initNav())
 
   // Hero particles — non-blocking
-  initHeroParticles().catch(e => console.error('[particles] failed:', e))
+  initHeroParticles().catch(e => { if (import.meta.env.DEV) console.error('[particles] failed:', e) })
 
   // Render all charts with full data — year sliders work across 2006-2025
   requestAnimationFrame(() => {
@@ -171,7 +261,7 @@ async function init() {
 }
 
 init().catch(err => {
-  console.error('Failed to load data:', err)
+  if (import.meta.env.DEV) console.error('Failed to load data:', err)
   const overlay = document.getElementById('loading-overlay')
   if (overlay) overlay.innerHTML =
     '<div class="loader-content"><p style="color:#E8614A">Failed to load data. Please refresh.</p></div>'

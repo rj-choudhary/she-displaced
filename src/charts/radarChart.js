@@ -29,13 +29,14 @@ const RING_LEVELS = [0.25, 0.5, 0.75, 1.0]
 
 // ── Region config ─────────────────────────────────────────────
 const REGIONS = [
-  { key: 'Sub-Saharan Africa', label: 'Sub-Saharan Africa', color: '#E8614A' },
-  { key: 'South Asia',         label: 'South Asia',         color: '#E8A84A' },
-  { key: 'MENA',               label: 'MENA',               color: '#C0392B' },
-  { key: 'East Asia',          label: 'East Asia',          color: '#2AADAD' },
-  { key: 'Latin America',      label: 'Latin America',      color: '#8B5CF6' },
-  { key: 'Europe',             label: 'Europe',             color: '#1A7A7A' },
-  { key: 'Central Asia',       label: 'Central Asia',       color: '#F59E0B' },
+  { key: 'Sub-Saharan Africa',        label: 'Sub-Saharan Africa',        color: '#E8614A' },
+  { key: 'South Asia',                label: 'South Asia',                color: '#E8A84A' },
+  { key: 'MENA',                      label: 'MENA',                      color: '#C0392B' },
+  { key: 'East Asia & Pacific',       label: 'East Asia & Pacific',       color: '#2AADAD' },
+  { key: 'Latin America & Caribbean', label: 'Latin America & Caribbean', color: '#8B5CF6' },
+  { key: 'Europe',                    label: 'Europe',                    color: '#1A7A7A' },
+  { key: 'Central Asia',              label: 'Central Asia',              color: '#F59E0B' },
+  { key: 'North America',             label: 'North America',             color: '#059669' },
 ]
 
 const COLOR_A = '#E8614A'
@@ -148,32 +149,6 @@ export function drawRadarChart(data) {
       grid.appendChild(cell)
       drawSmallRadar(chartDiv, avg, region.color, document.getElementById('continental-tooltip'))
     })
-
-    // 8th cell: "How to Read" legend card
-    var legendCell = document.createElement('div')
-    legendCell.className = 'continental-cell continental-legend-cell'
-    legendCell.innerHTML = [
-      '<div class="rlg-title">How to read</div>',
-      '<div class="rlg-body">',
-      '  <div class="rlg-row">',
-      '    <span class="rlg-sector" style="background:rgba(42,173,173,0.35); border-color:rgba(42,173,173,0.6)"></span>',
-      '    <span class="rlg-label">Climate</span>',
-      '    <span class="rlg-desc">Vulnerability, food, water</span>',
-      '  </div>',
-      '  <div class="rlg-row">',
-      '    <span class="rlg-sector" style="background:rgba(232,97,74,0.35); border-color:rgba(232,97,74,0.6)"></span>',
-      '    <span class="rlg-label">Gender</span>',
-      '    <span class="rlg-desc">Penalty, political, economic</span>',
-      '  </div>',
-      '  <div class="rlg-row">',
-      '    <span class="rlg-sector" style="background:rgba(232,168,74,0.35); border-color:rgba(232,168,74,0.6)"></span>',
-      '    <span class="rlg-label">Readiness</span>',
-      '    <span class="rlg-desc">Adaptive gap, readiness</span>',
-      '  </div>',
-      '</div>',
-      '<div class="rlg-hint">Larger polygon = higher combined risk · axes fixed 0→1</div>',
-    ].join('')
-    grid.appendChild(legendCell)
   }
 
   function renderCountry() {

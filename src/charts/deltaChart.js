@@ -13,7 +13,7 @@ export function drawDeltaChart(data) {
   const barH   = 18
   const barGap = 4
   // Use fixed logical dimensions — never rely on offsetWidth at init
-  const margin = { top: 48, right: 110, bottom: 40, left: 150 }
+  const margin = { top: 48, right: 60, bottom: 40, left: 150 }
   const W      = 560
   const H      = n * (barH + barGap) + margin.top + margin.bottom
 
@@ -90,7 +90,8 @@ export function drawDeltaChart(data) {
         enter => enter.append('text').attr('class', 'dl')
           .attr('x', -8).attr('text-anchor', 'end')
           .attr('font-size', 10).attr('fill', 'rgba(255,255,255,0.55)')
-          .attr('dominant-baseline', 'middle'),
+          .attr('dominant-baseline', 'middle')
+          .style('cursor', 'pointer'),
         update => update
       )
       .transition().duration(500)
@@ -126,35 +127,42 @@ export function drawDeltaChart(data) {
       .attr('fill', d => d.gdd > 0.20 ? '#F4957F' : 'rgba(255,255,255,0.4)')
       .text(d => d3.format('+.3f')(d.gdd))
 
-    // Context scores on right
-    g.selectAll('text.dc').data(top25, d => d.iso3)
-      .join(
-        enter => enter.append('text').attr('class', 'dc')
-          .attr('font-size', 9).attr('dominant-baseline', 'middle')
-          .attr('fill', 'rgba(255,255,255,0.2)'),
-        update => update
-      )
-      .transition().duration(500)
-      .attr('y', (d, i) => yPos(i) + barH / 2)
-      .attr('x', innerW + 6)
-      .text(d => d.sdrs.toFixed(2))
+    // Tooltip content (shared between bars and labels)
+    function deltaTip(d) {
+      return tooltipHtml(d.name, [
+        ['Gender Displacement Delta', d3.format('+.4f')(d.gdd)],
+        ['SDRS Score', d.sdrs != null ? d.sdrs.toFixed(3) : 'N/A'],
+        ['Climate Vulnerability', d.vulnerability.toFixed(3)],
+        ['n_Vulnerability (norm.)', d.n_vulnerability != null ? d.n_vulnerability.toFixed(3) : 'N/A'],
+        ['Gender Gap Score', d.gender_gap ? d.gender_gap.toFixed(3) : 'N/A'],
+        ['Region', d.region],
+      ])
+    }
 
-    // Hover
+    // Hover — bars
     barsG.selectAll('rect.db')
       .on('mousemove', function(event, d) {
-        showTooltip(tooltip, tooltipHtml(d.name, [
-          ['Gender Displacement Delta', d3.format('+.4f')(d.gdd)],
-          ['SDRS Score', d.sdrs != null ? d.sdrs.toFixed(3) : 'N/A'],
-          ['Climate Vulnerability', d.vulnerability.toFixed(3)],
-          ['n_Vulnerability (norm.)', d.n_vulnerability != null ? d.n_vulnerability.toFixed(3) : 'N/A'],
-          ['Gender Gap Score', d.gender_gap ? d.gender_gap.toFixed(3) : 'N/A'],
-          ['Region', d.region],
-        ]), event)
+        showTooltip(tooltip, deltaTip(d), event)
         d3.select(this).attr('opacity', 1)
       })
       .on('mouseleave', function() {
         hideTooltip(tooltip)
         d3.select(this).attr('opacity', 0.88)
+      })
+
+    // Hover — country name labels (same tooltip as bars)
+    labelsG.selectAll('text.dl')
+      .on('mousemove', function(event, d) {
+        showTooltip(tooltip, deltaTip(d), event)
+        d3.select(this).attr('fill', 'rgba(255,255,255,0.95)')
+        barsG.selectAll('rect.db')
+          .filter(b => b.iso3 === d.iso3)
+          .attr('opacity', 1)
+      })
+      .on('mouseleave', function() {
+        hideTooltip(tooltip)
+        d3.select(this).attr('fill', 'rgba(255,255,255,0.55)')
+        barsG.selectAll('rect.db').attr('opacity', 0.88)
       })
   }
 

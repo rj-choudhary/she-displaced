@@ -37,7 +37,7 @@ export function drawDisasterCharts(data) {
   var yearLabel       = document.getElementById('disaster-year-label')
   var lmValue         = document.getElementById('lm-value')
 
-  var selectedIso  = 'VNM'  // Vietnam — good example with flood dominance
+  var selectedIso  = 'USA'  // United States — 2025 saw major wildfire, storm, and flood events; mixed-hazard profile makes the 'Climate Crime Scene' framing tangible to a global audience
   var selectedYear = 2025
 
   // Country list
@@ -337,7 +337,7 @@ function drawSunburst(rec, iso) {
 
   svg.append('text')
     .attr('x', legendX)
-    .attr('y', totalY + 10)
+    .attr('y', totalY + 18)
     .attr('fill', '#fff')
     .attr('font-size', 20)
     .attr('font-weight', '700')

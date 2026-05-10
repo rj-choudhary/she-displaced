@@ -1042,7 +1042,7 @@ input[type="range"]::-webkit-slider-thumb {
   font-size: 15px;
   line-height: 1.7;
   color: rgba(255,255,255,0.75);
-  max-width: 680px;
+  max-width: none;
 }
 
 .outlier-header strong { color: var(--teal-lt); }

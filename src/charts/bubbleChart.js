@@ -225,9 +225,9 @@ export function drawBubbleChart(data) {
   dg.append('g').call(d3.axisLeft(yDD).ticks(5).tickSize(-diW).tickFormat(''))
     .call(ax=>{ax.select('.domain').remove();ax.selectAll('line').attr('stroke','rgba(0,0,0,0.07)')})
 
-  // X axis
+  // X axis — explicit anchors at 2006 (start), 2010, 2015, 2020, 2025 (end)
   dg.append('g').attr('transform',`translate(0,${diH})`)
-    .call(d3.axisBottom(xDD).ticks(years.length>12?8:years.length).tickFormat(d3.format('d')))
+    .call(d3.axisBottom(xDD).tickValues([2006, 2010, 2015, 2020, 2025]).tickFormat(d3.format('d')))
     .call(ax=>{ax.select('.domain').remove();ax.selectAll('line').attr('stroke','rgba(0,0,0,0.07)');ax.selectAll('text').attr('fill','#9CA3AF').attr('font-size',9)})
 
   // Y axis labels — positioned to the LEFT of the chart area (negative x)

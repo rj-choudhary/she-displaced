@@ -351,8 +351,8 @@ function drawLethalityMatrix(countryData, iso) {
   container.innerHTML = ''
 
   // Wider chart for better readability
-  var W = 460, H = 340
-  var margin = { top: 16, right: 24, bottom: 56, left: 52 }
+  var W = 460, H = 360
+  var margin = { top: 30, right: 24, bottom: 68, left: 72 }
   var iW = W - margin.left - margin.right
   var iH = H - margin.top - margin.bottom
 
@@ -360,7 +360,7 @@ function drawLethalityMatrix(countryData, iso) {
     .append('svg')
     .attr('viewBox', '0 0 ' + W + ' ' + H)
     .style('width', '100%')
-    .style('height', '340px')
+    .style('height', '352px')
     .attr('preserveAspectRatio', 'xMidYMid meet')
 
   var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
@@ -440,12 +440,12 @@ function drawLethalityMatrix(countryData, iso) {
       .text(text)
   }
 
-  // Top-right: CATASTROPHE
-  pillLabel(iW - 2, 12, 'CATASTROPHE', 'rgba(192,57,43,0.75)', 'end')
+  // Top-right: CATASTROPHE (above plot, in top margin — avoids overlapping data points)
+  pillLabel(iW - 2, -8, 'CATASTROPHE', 'rgba(192,57,43,0.75)', 'end')
   // Bottom-right: SILENT CRISIS
   pillLabel(iW - 2, iH - 4, 'SILENT CRISIS', 'rgba(13,148,136,0.75)', 'end')
-  // Top-left: RARE TRAGEDY
-  pillLabel(2, 12, 'RARE TRAGEDY', 'rgba(139,92,246,0.65)', 'start')
+  // Top-left: RARE TRAGEDY (above plot, in top margin — avoids overlapping data points)
+  pillLabel(2, -8, 'RARE TRAGEDY', 'rgba(139,92,246,0.65)', 'start')
   // Bottom-left: MANAGED
   pillLabel(2, iH - 4, 'MANAGED', 'rgba(107,114,128,0.6)', 'start')
 
@@ -465,13 +465,21 @@ function drawLethalityMatrix(countryData, iso) {
   // Axis labels — inside bottom margin, with log scale note
   svg.append('text')
     .attr('x', margin.left + iW / 2).attr('y', H - 38)
-    .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 8)
+    .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 9)
     .text('← Disruption: Total Affected (log scale) →')
 
-  svg.append('text').attr('transform', 'rotate(-90)')
-    .attr('x', -(margin.top + iH / 2)).attr('y', 11)
-    .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 8)
-    .text('← Lethality: Deaths (log scale) →')
+  // Y-axis label — stacked horizontal, centered on the y-axis (reads naturally, no head-tilt)
+  var yLabelMid = margin.top + iH / 2
+  svg.append('text')
+    .attr('x', 4).attr('y', yLabelMid - 4)
+    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 9)
+    .attr('font-weight', '600')
+    .text('↑ Lethality')
+
+  svg.append('text')
+    .attr('x', 4).attr('y', yLabelMid + 7)
+    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 8)
+    .text('Deaths (log)')
 
   // Bubbles — drawn last so they're on top of quadrant fills
   pts.forEach(function(d) {
@@ -658,9 +666,9 @@ function drawStreamgraph(countryData, iso) {
       .attr('opacity', 0.78)
   })
 
-  // X axis
+  // X axis — explicit anchors at 2006 (start), 2010, 2015, 2020, 2025 (end)
   g.append('g').attr('transform', 'translate(0,' + iH + ')')
-    .call(d3.axisBottom(xScale).ticks(years.length > 10 ? 8 : years.length).tickFormat(d3.format('d')))
+    .call(d3.axisBottom(xScale).tickValues([2006, 2010, 2015, 2020, 2025]).tickFormat(d3.format('d')))
     .call(function(ax) { ax.select('.domain').remove() })
     .call(function(ax) { ax.selectAll('text').attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9) })
     .call(function(ax) { ax.selectAll('line').attr('stroke', 'rgba(255,255,255,0.1)') })

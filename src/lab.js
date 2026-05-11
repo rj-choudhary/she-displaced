@@ -156,19 +156,28 @@ export function initLab(data) {
 
     if (Math.abs(delta) < 0.001) return
 
-    // Proportional redistribution
+    // Redistribute the delta across the other sliders.
+    // Proportional when there's weight to draw from; equal split when all
+    // others are zero — without the fallback, dragging a slider to 1.0 and
+    // back gets stuck: otherSum is 0, nothing rebalances, and renormalization
+    // snaps the changed slider right back to 1.0.
     if (otherSum > 0.001) {
       others.forEach(k => {
         const wk = wkMap[k]
         const share = weights[wk] / otherSum
         weights[wk] = Math.max(0, weights[wk] - delta * share)
       })
+    } else {
+      const share = delta / others.length
+      others.forEach(k => {
+        weights[wkMap[k]] = Math.max(0, weights[wkMap[k]] - share)
+      })
     }
     weights[changedWk] = newVal
 
     // Clamp and renormalize to exactly 1.0
     const total = Object.values(weights).reduce((s, v) => s + v, 0)
-    if (Math.abs(total - 1.0) > 0.001) {
+    if (total > 0.001 && Math.abs(total - 1.0) > 0.001) {
       Object.keys(weights).forEach(k => { weights[k] = weights[k] / total })
     }
 

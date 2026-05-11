@@ -135,7 +135,7 @@ body {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--teal-lt);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   font-weight: 500;
 }
 
@@ -143,7 +143,7 @@ body {
   font-family: var(--font-display);
   font-size: clamp(64px, 12vw, 120px);
   line-height: 0.9;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   display: block;
 }
 
@@ -168,11 +168,11 @@ body {
   letter-spacing: -0.005em;
   text-transform: none;
   color: rgba(255,255,255,0.82);
-  margin-bottom: 28px;
+  margin-bottom: 48px;
   line-height: 1.3;
 }
 @media (max-width: 640px) {
-  .hero-subtitle { font-size: 18px; }
+  .hero-subtitle { font-size: 18px; margin-bottom: 36px; }
 }
 
 .hero-desc {
@@ -4693,4 +4693,305 @@ input[type="range"]::-webkit-slider-thumb {
 .chapter-mobile-num {
   text-shadow: 0 0 10px rgba(232,97,74,0.6);
   animation: chapterPulse 2.5s ease-in-out infinite;
+}
+
+
+/* ============================================================
+   INSIGHT PODCAST — Hero invite + floating bottom-right player
+   ============================================================ */
+
+/* Hide the actual <audio> element (we render our own UI) */
+#insight-audio { display: none; }
+
+/* ── Hero audio invite (between hero-desc and hero-stats) ──── */
+.hero-audio-invite {
+  max-width: 600px;
+  margin: 0 auto 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-audio-copy {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  max-width: 560px;
+  font-style: italic;
+  letter-spacing: 0.005em;
+}
+
+.hero-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px 10px 14px;
+  background: rgba(232, 97, 74, 0.12);
+  border: 1px solid rgba(232, 97, 74, 0.45);
+  border-radius: 999px;
+  color: var(--coral-lt);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.hero-audio-btn:hover {
+  background: rgba(232, 97, 74, 0.22);
+  border-color: var(--coral);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.hero-audio-btn:active { transform: translateY(0); }
+
+.hero-audio-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--coral);
+  border-radius: 50%;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Swap play/pause icons based on .is-playing */
+.hero-audio-btn .icon-pause,
+.ip-play-btn .icon-pause { display: none; }
+
+.hero-audio-btn.is-playing .icon-play,
+.ip-play-btn.is-playing .icon-play { display: none; }
+
+.hero-audio-btn.is-playing .icon-pause,
+.ip-play-btn.is-playing .icon-pause { display: block; }
+
+/* ── Floating bottom-right Insight Podcast card ───────────── */
+.insight-player {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 224px;
+  max-width: calc(100vw - 32px);
+  z-index: 9500;
+  background: linear-gradient(155deg, rgba(26, 26, 46, 0.96), rgba(45, 45, 74, 0.96));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 97, 74, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(232, 97, 74, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-sans);
+  padding: 12px 14px 10px;
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.insight-player.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.insight-player.is-hidden {
+  display: none;
+}
+
+/* Header row */
+.ip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ip-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ip-title {
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ip-mic {
+  font-size: 12px;
+  margin-right: 3px;
+  display: inline-block;
+  transform: translateY(-1px);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.ip-title em {
+  font-style: italic;
+  color: var(--coral-lt);
+  font-weight: inherit;
+}
+
+.ip-close {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.ip-close:hover {
+  background: rgba(232, 97, 74, 0.18);
+  color: #fff;
+  border-color: rgba(232, 97, 74, 0.45);
+}
+
+/* Body — play button + track */
+.ip-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ip-play-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--coral);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(232, 97, 74, 0.35);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.ip-play-btn:hover {
+  background: var(--coral-lt);
+  box-shadow: 0 6px 18px rgba(232, 97, 74, 0.55);
+}
+
+.ip-play-btn:active { transform: scale(0.95); }
+
+.ip-play-btn .icon-play {
+  /* Optical-center nudge for play triangle */
+  transform: translateX(1.5px);
+}
+
+.ip-track-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Custom slider — progressive coral fill left of the thumb */
+.ip-slider {
+  --ip-progress: 0%;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    to right,
+    var(--coral) 0%,
+    var(--coral) var(--ip-progress),
+    rgba(255, 255, 255, 0.18) var(--ip-progress),
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* WebKit thumb */
+.ip-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid var(--coral);
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.ip-slider::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+  cursor: grabbing;
+}
+
+/* Firefox thumb */
+.ip-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 2px solid var(--coral);
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.ip-slider::-moz-range-track { background: transparent; border: none; }
+
+.ip-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.ip-time-cur { color: var(--coral-lt); font-weight: 600; }
+
+/* ── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .insight-player {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    padding: 12px 14px 10px;
+  }
+  .ip-title { font-size: 16px; }
+  .ip-play-btn { width: 36px; height: 36px; }
+  .hero-audio-copy { font-size: 13px; }
+  .hero-audio-btn { font-size: 12px; padding: 9px 16px 9px 12px; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .insight-player,
+  .hero-audio-btn,
+  .ip-play-btn,
+  .ip-close {
+    transition: none !important;
+  }
+  .hero-audio-btn:hover { transform: none; }
 }

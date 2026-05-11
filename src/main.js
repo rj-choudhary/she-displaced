@@ -10,6 +10,7 @@ import { drawOutlierRadar }  from './charts/outlierRadar.js'
 import { drawDeltaChart }    from './charts/deltaChart.js'
 import { drawDisasterCharts } from './charts/disasterCharts.js'
 import { initHeroParticles } from './charts/heroParticles.js'
+import { initInsightPlayer } from './insightPlayer.js'
 
 function safe(name, fn) {
   try { fn() } catch(e) { if (import.meta.env.DEV) console.error(`[${name}] failed:`, e) }
@@ -240,6 +241,42 @@ async function init() {
   // Load full data — brotli-compressed to ~231KB, loads in <0.5s on most connections
   const data = await d3.json('/sdrs_data.json')
 
+  // Normalize country display names — the source dataset uses verbose UN formal names
+  // (several chopped by an upstream CSV field-length cap). Override with short, widely
+  // recognized forms so every chart — bar labels, tooltips, slope annotations, search
+  // dropdowns — gets them consistently without per-chart truncation.
+  const DISPLAY_NAMES = {
+    // Truncated in source (missing trailing characters)
+    COD: 'DR Congo',
+    VEN: 'Venezuela',
+    PRK: 'North Korea',
+    // Long UN formal names — shorten to common usage
+    KOR: 'South Korea',
+    IRN: 'Iran',
+    LAO: 'Laos',
+    BOL: 'Bolivia',
+    FSM: 'Micronesia',
+    TZA: 'Tanzania',
+    MDA: 'Moldova',
+    SYR: 'Syria',
+    RUS: 'Russia',
+    CAF: 'Central African Rep.',
+    LBY: 'Libya',
+    ARE: 'UAE',
+    VCT: 'St. Vincent & Grenadines',
+    STP: 'São Tomé & Príncipe',
+    BRN: 'Brunei',
+    DOM: 'Dominican Rep.',
+    CZE: 'Czechia',
+    GBR: 'United Kingdom',
+    BIH: 'Bosnia & Herzegovina',
+    ATG: 'Antigua & Barbuda',
+    TTO: 'Trinidad & Tobago',
+  }
+  data.forEach(d => {
+    if (DISPLAY_NAMES[d.iso3]) d.name = DISPLAY_NAMES[d.iso3]
+  })
+
   // Hide loader
   const overlay = document.getElementById('loading-overlay')
   overlay.classList.add('hidden')
@@ -247,6 +284,9 @@ async function init() {
 
   // Navigation
   safe('nav', () => initNav())
+
+  // Insight podcast player — wires hero button + floating card to shared audio
+  safe('insightPlayer', () => initInsightPlayer())
 
   // Hero particles — non-blocking
   initHeroParticles().catch(e => { if (import.meta.env.DEV) console.error('[particles] failed:', e) })

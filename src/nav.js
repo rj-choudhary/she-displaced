@@ -116,19 +116,40 @@ export function initNav() {
 
   function navigateToHash() {
     const pageId = pageFromHash()
-    applyPage(pageId)
+    const prevPageId = document.querySelector('.page.active')?.id?.replace(/^page-/, '')
+    const pageChanged = prevPageId !== pageId
 
     const hash = window.location.hash
-    // If there's a section anchor in the hash, scroll to it after page switch
-    if (hash && hash.startsWith('#') && !HASH_ROUTES[hash]) {
+    const isSectionAnchor = hash && hash.startsWith('#') && !HASH_ROUTES[hash]
+
+    // Jump to top BEFORE page swap when we're switching to a different top-of-page
+    // route. Doing this before applyPage() means we reset scroll while the old
+    // (taller) page is still in the DOM, avoiding layout-shrink scroll clamping.
+    // The global `html { scroll-behavior: smooth }` rule would normally animate
+    // this — we override with behavior:'instant' so it snaps.
+    if (pageChanged && !isSectionAnchor) {
+      // Belt + suspenders: API call for modern browsers, direct prop for the rest.
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    }
+
+    applyPage(pageId)
+
+    if (isSectionAnchor) {
+      // Section anchor on the (possibly-just-shown) page → smooth scroll to it
       const target = document.getElementById(hash.slice(1))
       if (target) {
-        // Use a short timeout so the page visibility change lands before scroll
         setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30)
       }
-    } else if (HASH_ROUTES[hash] || hash === '') {
-      // Top-of-page routes: scroll to top instantly (no animation, feels snappier)
-      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' })
+    } else if (pageChanged) {
+      // Second pass after layout — in case the new page's DOM height changed
+      // the scroll position again. Still instant, still bypasses smooth CSS.
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
+      })
     }
 
     // Refresh chapter detection after route change

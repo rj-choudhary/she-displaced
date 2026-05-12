@@ -139,7 +139,7 @@
         <div class="stat"><span class="stat-num" id="stat-years">20</span><span class="stat-label">Years of Data</span></div>
         <div class="stat"><span class="stat-num" id="stat-top">150M</span><span class="stat-label">Women at Risk<span class="stat-asterisk" title="Source: UN Women (2022), 'Gender Equality and Climate Change' — estimates 158–189M women and girls live in areas of elevated climate-displacement risk. We use the lower-bound rounded figure.">*</span></span></div>
       </div>
-      <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth'})">
+      <button class="scroll-cta" onclick="document.getElementById('section-intro').scrollIntoView({behavior:'smooth', block:'start'})">
         Explore the Data ↓
       </button>
     </div>
@@ -159,6 +159,7 @@
         </p>
         <p>
           Yet this intersection is rarely mapped transparently. That's what the <strong>She Displacement Risk Score (SDRS)</strong> does — openly, and across 20 years.
+          <a class="inline-method-link" href="#/methodology">See methodology &rarr;</a>
         </p>
       </div>
     </div>
@@ -266,7 +267,7 @@
       <p class="chapter-hook">"Every crisis has a unique DNA. Is it a lack of water security, or a lack of political voice?"</p>
       <p class="section-desc">
         Every country and region carries a unique risk shape — the intersection of climate exposure, gender inequality, and adaptive capacity.
-        Switch between the <strong class="highlight-coral">Continental Gallery</strong> for a macro scan across regions,
+        Switch between the <strong class="highlight-coral">Regional Gallery</strong> for a macro scan across regions,
         or the <strong class="highlight-teal">Country Comparison</strong> to drill into any two countries side by side,
         with each country's profile shown against its regional average.
       </p>
@@ -276,7 +277,7 @@
     <div class="radar-toolbar">
       <div class="radar-view-toggle">
         <button class="radar-view-btn active" data-view="continental">
-          <span class="rvb-icon">⊞</span> Continental Gallery
+          <span class="rvb-icon">⊞</span> Regional Gallery
         </button>
         <button class="radar-view-btn" data-view="country">
           <span class="rvb-icon">⊙</span> Country Comparison
@@ -294,10 +295,10 @@
       <div id="continental-tooltip" class="tooltip hidden"></div>
       <div class="radar-inline-legend">
         <span class="ril-title">How to read</span>
-        <span class="ril-item"><span class="ril-chip" style="background:rgba(42,173,173,0.35); border-color:rgba(42,173,173,0.6)"></span>Climate <em>(vulnerability, food, water)</em></span>
-        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,97,74,0.35); border-color:rgba(232,97,74,0.6)"></span>Gender <em>(penalty, political, economic)</em></span>
-        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,168,74,0.35); border-color:rgba(232,168,74,0.6)"></span>Readiness <em>(adaptive gap, readiness)</em></span>
-        <span class="ril-hint">Larger polygon = higher combined risk · axes fixed 0→1</span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(42,173,173,0.35); border-color:rgba(42,173,173,0.6)"></span>Climate <em>(food, water, health)</em></span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,97,74,0.35); border-color:rgba(232,97,74,0.6)"></span>Gender <em>(economic, political, educational)</em></span>
+        <span class="ril-item"><span class="ril-chip" style="background:rgba(232,168,74,0.35); border-color:rgba(232,168,74,0.6)"></span>Readiness <em>(economic, governance, social)</em></span>
+        <span class="ril-hint">Each axis is a sub-dimension · Larger polygon = higher combined risk · axes fixed 0→1</span>
       </div>
     </div>
 
@@ -317,7 +318,7 @@
         </div>
         <div class="radar-ghost-legend">
           <span class="ghost-swatch"></span>
-          <span>Dashed outline = continental average for that country's region</span>
+          <span>Dashed outline = regional average for that country's region</span>
         </div>
       </div>
       <div id="radar-chart-container">
@@ -523,7 +524,7 @@
         <div class="bubble-size-legend">
           <span class="bsl-label">
             <span class="bsl-eyebrow">BUBBLE SIZE</span>
-            <span class="bsl-sub">People affected by climate disasters</span>
+            <span class="bsl-sub">Affected population in the selected year</span>
           </span>
           <span class="bsl-scale" aria-hidden="true">
             <span class="bsl-item bsl-item-sm">
@@ -682,8 +683,8 @@
       <!-- RIGHT: Live leaderboard -->
       <div class="lab-right">
         <div class="lab-board-header">
-          <div class="lab-card-title">Top 10 — Live Ranking <span class="lab-year-tag">2025</span></div>
-          <p class="lab-card-desc">Updates instantly as you drag. Bars show <em>why</em> each country ranks — segmented by the 4 SDRS components.</p>
+          <div class="lab-card-title">Top 10 by SDRS — Live Ranking <span class="lab-year-tag">2025</span></div>
+          <p class="lab-card-desc">Ranks update instantly as you drag the weights. Bars show <em>why</em> each country ranks — segmented by the 4 SDRS components. Higher score = higher displacement risk.</p>
           <div class="lab-seg-legend" aria-label="Component color legend">
             <span class="lsl-item"><span class="lsl-chip" style="background:#2AADAD"></span>Climate</span>
             <span class="lsl-item"><span class="lsl-chip" style="background:#F59E0B"></span>Adaptive gap</span>
@@ -1019,7 +1020,7 @@
           <h2>Data Sources &amp; Coverage</h2>
           <div class="sources-grid">
             <div class="source-card">
-              <div class="source-name"><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener"></a>ND-GAIN Country Index ↗</a></div>
+              <div class="source-name"><a href="https://gain.nd.edu/our-work/country-index/" target="_blank" rel="noopener">ND-GAIN Country Index ↗</a></div>
               <div class="source-org">Notre Dame Global Adaptation Initiative</div>
               <div class="source-desc">Annual vulnerability and readiness scores for 182 countries, 1995–2023. For 2024–2025, the Last Observation Carried Forward (LOCF) approach was applied — 2023 values are held constant. Peer-reviewed methodology combining 45 indicators across 6 life sectors.</div>
               <div class="source-cols"><strong>Columns used:</strong> vulnerability, readiness, and all sub-dimensions</div>
@@ -1129,10 +1130,13 @@
           <span class="tech-tag">D3.js v7</span>
           <span class="tech-tag">Vite</span>
           <span class="tech-tag">TopoJSON</span>
+          <span class="tech-tag">world-atlas</span>
+          <span class="tech-tag">HTML5 Canvas</span>
           <span class="tech-tag">Vanilla JS</span>
+          <span class="tech-tag">Google Fonts</span>
           <span class="tech-tag">Python</span>
           <span class="tech-tag">Google Gemini</span>
-          <span class="tech-tag">Claude Sonnet</span>
+          <span class="tech-tag">Claude Opus 4.7</span>
           <span class="tech-tag">Vercel</span>
         </div>
       </div>

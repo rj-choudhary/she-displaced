@@ -110,14 +110,24 @@ export async function drawWorldMap(data) {
       const rec = iso3 ? lookup[iso3] : null
       if (!rec) return
       const cfg = LAYER_CONFIG[currentLayer]
-      showTooltip(tooltip, tooltipHtml(rec.name, [
-        ['SDRS Score', rec.sdrs.toFixed(3)],
-        ['Climate Vulnerability', rec.vulnerability.toFixed(3)],
-        ['Gender Gap Score', rec.gender_gap.toFixed(3)],
-        ['Gender Penalty', rec.gender_penalty.toFixed(3)],
-        ['Readiness', rec.readiness.toFixed(3)],
-        ['Region', rec.region],
-      ]), event)
+      // Safe formatter — some countries have climate data but no SDRS/gender rows
+      // (e.g. Somalia, North Korea). Null-guard every field so the tooltip renders
+      // for partially-covered countries instead of silently throwing.
+      const fmt = v => (v == null ? 'N/A' : v.toFixed(3))
+      const rows = [
+        ['SDRS Score',             fmt(rec.sdrs)],
+        ['Climate Vulnerability',  fmt(rec.vulnerability)],
+        ['Gender Gap Score',       fmt(rec.gender_gap)],
+        ['Gender Penalty',         fmt(rec.gender_penalty)],
+        ['Readiness',              fmt(rec.readiness)],
+        ['Region',                 rec.region || 'N/A'],
+      ]
+      // If SDRS is missing, flag it so users understand why the country is grayed
+      // out in the SDRS/Gender layers but colored in the Climate layer.
+      if (rec.sdrs == null) {
+        rows.unshift(['Status', 'Partial data — SDRS not available'])
+      }
+      showTooltip(tooltip, tooltipHtml(rec.name, rows), event)
       d3.select(this).attr('stroke', '#fff').attr('stroke-width', 1.5)
     })
     .on('mouseleave', function() {

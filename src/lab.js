@@ -1,5 +1,7 @@
 // ── Innovation Lab — Live SDRS Weight Sandbox ─────────────────
 
+import { showTooltip, hideTooltip, tooltipHtml } from './charts/utils.js'
+
 const PRESETS = {
   default:  { w_v: 0.30, w_r: 0.20, w_g: 0.35, w_d: 0.15, label: 'Default',         desc: 'Gender-forward · The thesis of this index' },
   equal:    { w_v: 0.25, w_r: 0.25, w_g: 0.25, w_d: 0.25, label: 'Equal',            desc: 'Agnostic baseline — all dimensions equal' },
@@ -65,6 +67,16 @@ export function initLab(data) {
   const countryDd   = document.getElementById('lab-country-dropdown')
   const spotResult  = document.getElementById('lab-spotlight-result')
 
+  // Shared tooltip element for the leaderboard. Reuses the site-wide .tooltip
+  // styling from style.css — ink background, coral-lt title, tabular rows.
+  let labTooltip = document.getElementById('lab-tooltip')
+  if (!labTooltip) {
+    labTooltip = document.createElement('div')
+    labTooltip.id = 'lab-tooltip'
+    labTooltip.className = 'tooltip hidden'
+    document.body.appendChild(labTooltip)
+  }
+
   // ── Rescore function ──────────────────────────────────────────
   function scoreAndRank(rows, w) {
     return rows
@@ -99,6 +111,7 @@ export function initLab(data) {
     top10.forEach((d, i) => {
       const rank        = i + 1
       const defaultRank = defaultRankMap[d.iso3] || '—'
+      const defaultScore = defaultScoreMap[d.iso3]
       const shift       = defaultRank !== '—' ? defaultRank - rank : 0
       const shiftText   = shift > 0 ? `▲${shift}` : shift < 0 ? `▼${Math.abs(shift)}` : '—'
       const shiftClass  = shift > 0 ? 'shift-up' : shift < 0 ? 'shift-down' : 'shift-none'
@@ -112,16 +125,29 @@ export function initLab(data) {
         const share   = d._score > 0 ? contrib / d._score : 0
         return { ...c, share, pct: share * 100 }
       })
-      const tooltipText = segments
-        .map(s => `${s.label}: ${(s.pct).toFixed(0)}%`)
-        .join(' · ')
+
+      // Full tooltip rows — default vs current rank/score, plus component breakdown
+      const scoreDelta = defaultScore != null ? d._score - defaultScore : null
+      const deltaText  = scoreDelta == null ? '—'
+        : (scoreDelta >= 0 ? '+' : '') + scoreDelta.toFixed(3)
+      const tooltipRows = [
+        ['Default rank',   defaultRank !== '—' ? `#${defaultRank}` : '—'],
+        ['Current rank',   `#${rank}`],
+        ['Rank shift',     shiftText === '—' ? 'unchanged' : shiftText],
+        ['Default SDRS',   defaultScore != null ? defaultScore.toFixed(3) : '—'],
+        ['Current SDRS',   d._score.toFixed(3)],
+        ['Score change',   deltaText],
+      ]
+      segments.forEach(s => {
+        tooltipRows.push([`${s.label} share`, s.pct.toFixed(0) + '%'])
+      })
 
       const row = document.createElement('div')
       row.className = `lab-board-row${isSpotlight ? ' spotlight' : ''}`
       row.innerHTML = `
         <span class="lbr-rank">${rank}</span>
         <span class="lbr-name">${d.name.length > 18 ? d.name.slice(0,16)+'…' : d.name}</span>
-        <div class="lbr-bar-wrap" title="${tooltipText}">
+        <div class="lbr-bar-wrap">
           <div class="lbr-bar-inner" style="width:${barPct}%">
             ${segments.map(s => `<span class="lbr-seg" style="width:${s.pct.toFixed(2)}%;background:${s.color}"></span>`).join('')}
           </div>
@@ -129,6 +155,15 @@ export function initLab(data) {
         <span class="lbr-score">${d._score.toFixed(3)}</span>
         <span class="lbr-shift ${shiftClass}">${shiftText}</span>
       `
+
+      // Hover tooltip — shows default vs current rank/score + component shares
+      row.addEventListener('mousemove', (event) => {
+        showTooltip(labTooltip, tooltipHtml(d.name, tooltipRows), event)
+      })
+      row.addEventListener('mouseleave', () => {
+        hideTooltip(labTooltip)
+      })
+
       leaderboard.appendChild(row)
     })
 

@@ -2,12 +2,19 @@ import * as d3 from 'd3'
 import { showTooltip, hideTooltip, tooltipHtml, getDataForYear } from './utils.js'
 
 const QUADRANTS = [
-  { id:'tl', label:'Physical Exposure',  color:'rgba(232,168,74,0.07)', stroke:'rgba(232,168,74,0.3)',  x1:0.1,  x2:0.4, y1:0.55, y2:0.85 },
-  { id:'tr', label:'Compounding Crisis', color:'rgba(232,97,74,0.08)',  stroke:'rgba(232,97,74,0.35)',  x1:0.4, x2:0.7,  y1:0.55, y2:0.85 },
-  { id:'bl', label:'Resilient Leaders',  color:'rgba(26,122,122,0.07)', stroke:'rgba(26,122,122,0.25)', x1:0.1,  x2:0.4, y1:0.1,  y2:0.55 },
-  { id:'br', label:'The Glass Ceiling',  color:'rgba(139,92,246,0.07)', stroke:'rgba(139,92,246,0.25)', x1:0.4, x2:0.7,  y1:0.1,  y2:0.55 },
+  { id:'tl', label:'Physical Exposure',  labelPos:'tl',
+    description:'High climate vulnerability, but gender inequality is not the main driver. Acute physical risk dominates — e.g., Pacific and Caribbean island states.',
+    color:'rgba(232,168,74,0.07)', stroke:'rgba(232,168,74,0.3)',  x1:0.1,  x2:0.4, y1:0.55, y2:0.85 },
+  { id:'tr', label:'Compounding Crisis', labelPos:'tr',
+    description:'High climate vulnerability compounded by severe gender inequality. The most acute displacement risk combination — e.g., Afghanistan, Yemen, Chad.',
+    color:'rgba(232,97,74,0.08)',  stroke:'rgba(232,97,74,0.35)',  x1:0.4, x2:0.7,  y1:0.55, y2:0.85 },
+  { id:'bl', label:'Resilient Leaders',  labelPos:'bl',
+    description:'Low climate exposure paired with strong gender equity. The structural blueprint for resilience — e.g., Nordic countries, Canada.',
+    color:'rgba(26,122,122,0.07)', stroke:'rgba(26,122,122,0.25)', x1:0.1,  x2:0.4, y1:0.1,  y2:0.55 },
+  { id:'br', label:'The Glass Ceiling',  labelPos:'br',
+    description:'Strong climate adaptation capacity but persistent gender inequality. Often wealthy economies where women still face structural barriers — e.g., Gulf states.',
+    color:'rgba(139,92,246,0.07)', stroke:'rgba(139,92,246,0.25)', x1:0.4, x2:0.7,  y1:0.1,  y2:0.55 },
 ]
-const LINE_COLORS = ['#E8614A','#F4957F','#E8A84A','#2AADAD','#1A7A7A','#8B5CF6','#C0392B','#F59E0B','#0EA5E9','#059669','#EC4899','#6366F1']
 
 export function drawBubbleChart(data) {
   const container  = document.getElementById('bubble-chart')
@@ -140,11 +147,12 @@ export function drawBubbleChart(data) {
   })
 
   // ── SCATTER SVG ───────────────────────────────────────────────
-  const sm = {top:14,right:20,bottom:36,left:58}
-  const SW=640, SH=400, siW=SW-sm.left-sm.right, siH=SH-sm.top-sm.bottom
+  // Bottom margin sized to clear axis tick labels (~12px) + breathing room + title.
+  const sm = {top:14,right:20,bottom:52,left:58}
+  const SW=640, SH=420, siW=SW-sm.left-sm.right, siH=SH-sm.top-sm.bottom
 
   const scatterSvg = d3.select(container).append('svg')
-    .attr('viewBox',`0 0 ${SW} ${SH}`).style('width','100%').style('height','400px')
+    .attr('viewBox',`0 0 ${SW} ${SH}`).style('width','100%').style('height','420px')
     .attr('preserveAspectRatio','xMidYMid meet')
   const sg = scatterSvg.append('g').attr('transform',`translate(${sm.left},${sm.top})`)
 
@@ -173,11 +181,33 @@ export function drawBubbleChart(data) {
 
   QUADRANTS.forEach(q => {
     const x1=xSc(q.x1),x2=xSc(q.x2),y1=ySc(q.y2),y2=ySc(q.y1)
-    sg.append('rect').attr('x',x1).attr('y',y1).attr('width',x2-x1).attr('height',y2-y1)
+    // Quadrant rect — hover shows the HTML tooltip with plain-English description.
+    // Bubble hover takes priority because bubbles sit above rects in SVG z-order and
+    // have their own mousemove handler that overwrites the tooltip content.
+    const rect = sg.append('rect').attr('x',x1).attr('y',y1).attr('width',x2-x1).attr('height',y2-y1)
       .attr('fill',q.color).attr('stroke',q.stroke).attr('stroke-width',0.8).attr('stroke-dasharray','4,3')
-    sg.append('text').attr('x',q.x1>=0.55?x2-4:x1+4).attr('y',q.y2>=0.55?y1+13:y2-5)
-      .attr('text-anchor',q.x1>=0.55?'end':'start')
-      .attr('fill',q.stroke.replace(/[\d.]+\)$/,'0.85)')).attr('font-size',8.5).attr('font-weight','700').attr('letter-spacing','0.07em')
+      .style('cursor','help')
+      .on('mousemove', function(event) {
+        showTooltip(tooltip, `<div class="tooltip-title">${q.label}</div><div class="tooltip-row" style="white-space:normal;line-height:1.45;max-width:260px;">${q.description}</div>`, event)
+      })
+      .on('mouseleave', function() {
+        hideTooltip(tooltip)
+      })
+
+    // Position label by the quadrant's intrinsic corner so bubbles (which cluster
+    // toward the chart's interior) don't overlap with the text.
+    const pad = 8
+    let lx, ly, anchor
+    if (q.labelPos === 'tl')       { lx = x1 + pad; ly = y1 + 14; anchor = 'start' }
+    else if (q.labelPos === 'tr')  { lx = x2 - pad; ly = y1 + 14; anchor = 'end'   }
+    else if (q.labelPos === 'bl')  { lx = x1 + pad; ly = y2 - 6;  anchor = 'start' }
+    else /* 'br' */                { lx = x2 - pad; ly = y2 - 6;  anchor = 'end'   }
+
+    sg.append('text').attr('x',lx).attr('y',ly)
+      .attr('text-anchor',anchor)
+      .attr('fill',q.stroke.replace(/[\d.]+\)$/,'0.85)'))
+      .attr('font-size',11).attr('font-weight','700').attr('letter-spacing','0.07em')
+      .attr('pointer-events','none')
       .text(q.label.toUpperCase())
   })
   sg.append('line').attr('x1',xSc(0.4)).attr('x2',xSc(0.4)).attr('y1',0).attr('y2',siH)
@@ -191,11 +221,12 @@ export function drawBubbleChart(data) {
   sg.append('g').call(d3.axisLeft(ySc).ticks(5).tickFormat(d3.format('.2f')))
     .call(ax=>{ax.select('.domain').remove();ax.selectAll('line').attr('stroke','rgba(0,0,0,0.08)');ax.selectAll('text').attr('fill','#9CA3AF').attr('font-size',9)})
 
-  scatterSvg.append('text').attr('x',sm.left+siW/2).attr('y',SH-8)
-    .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',10)
+  // X-axis title — pushed into the bottom margin, well clear of tick labels
+  scatterSvg.append('text').attr('x',sm.left+siW/2).attr('y',SH-10)
+    .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',11)
     .text('Gender Penalty →  Higher = More Inequality')
   scatterSvg.append('text').attr('transform','rotate(-90)').attr('x',-(sm.top+siH/2)).attr('y',14)
-    .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',10).text('Climate Vulnerability →')
+    .attr('text-anchor','middle').attr('fill','#6B7280').attr('font-size',11).text('Climate Vulnerability →  Higher = More Exposed')
 
   // ── Bubble size legend is rendered in HTML above the chart (see index.html) ──
   // Leave SVG margin normal — no inline legend
@@ -239,7 +270,7 @@ export function drawBubbleChart(data) {
     })
 
   ddSvg.append('text').attr('x',dm.left+diW/2).attr('y',DH-6)
-    .attr('text-anchor','middle').attr('fill','#9CA3AF').attr('font-size',9).text('Year')
+    .attr('text-anchor','middle').attr('fill','#9CA3AF').attr('font-size',10).text('Year')
   // Score label removed — legend explains the lines
 
   // Median band

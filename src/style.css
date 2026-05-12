@@ -328,6 +328,8 @@ body {
 .narrative-section {
   background: var(--ink-lt);
   padding: 26px 40px;
+  /* Offset smooth-scroll anchor so the heading clears the fixed 60px top-nav */
+  scroll-margin-top: 72px;
 }
 
 .narrative-inner {
@@ -351,6 +353,28 @@ body {
   color: rgba(255,255,255,0.75);
   font-weight: 300;
   margin-bottom: 12px;
+}
+
+/* Inline "See methodology" link — unobtrusive, high discoverability */
+.inline-method-link {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px 2px;
+  background: rgba(232,97,74,0.12);
+  border: 1px solid rgba(232,97,74,0.35);
+  border-radius: 999px;
+  color: var(--coral-lt);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.inline-method-link:hover {
+  background: rgba(232,97,74,0.22);
+  border-color: var(--coral);
+  color: #fff;
 }
 
 /* ============================================================
@@ -523,7 +547,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .map-insight-card .mi-tag {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--layer-accent);
@@ -566,7 +590,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .map-insight-card .mi-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -629,7 +653,7 @@ input[type="range"]::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   padding-top: 4px;
   border-top: 1px dashed rgba(0,0,0,0.06);
@@ -656,7 +680,7 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: help;
 }
 .map-insight-card .mi-median-label {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -4557,6 +4581,7 @@ input[type="range"]::-webkit-slider-thumb {
 .lab-board-row {
   display: grid;
   grid-template-columns: 26px 1fr 90px 46px 34px;
+  cursor: help;
   align-items: center;
   gap: 8px;
   padding: 9px 4px;

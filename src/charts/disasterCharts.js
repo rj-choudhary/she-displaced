@@ -278,7 +278,7 @@ function drawSunburst(rec, iso) {
     .attr('x', gridStartX)
     .attr('y', gridStartY + ROWS * (cellSize + gap) + 14)
     .attr('fill', 'rgba(255,255,255,0.35)')
-    .attr('font-size', 9)
+    .attr('font-size', 10)
     .attr('font-style', 'italic')
     .text('Each cell = 1% of affected population')
 
@@ -289,7 +289,7 @@ function drawSunburst(rec, iso) {
   svg.append('text')
     .attr('x', legendX).attr('y', legendTop + 8)
     .attr('fill', 'rgba(255,255,255,0.5)')
-    .attr('font-size', 9)
+    .attr('font-size', 10)
     .attr('font-weight', '700')
     .attr('letter-spacing', '0.14em')
     .text('BREAKDOWN')
@@ -297,7 +297,7 @@ function drawSunburst(rec, iso) {
   // Legend rows — visible subtypes
   var visibleSubs = cellCounts.filter(function(c) { return c.cells > 0 }).slice(0, 6)
   visibleSubs.forEach(function(sub, idx) {
-    var y = legendTop + 26 + idx * 26
+    var y = legendTop + 28 + idx * 32
 
     // Color chip
     svg.append('rect')
@@ -310,7 +310,7 @@ function drawSunburst(rec, iso) {
     svg.append('text')
       .attr('x', legendX + 16).attr('y', y)
       .attr('fill', 'rgba(255,255,255,0.85)')
-      .attr('font-size', 10.5)
+      .attr('font-size', 11.5)
       .attr('font-weight', '600')
       .attr('dominant-baseline', 'middle')
       .text(sub.label)
@@ -319,7 +319,7 @@ function drawSunburst(rec, iso) {
     svg.append('text')
       .attr('x', legendX + 16).attr('y', y + 11)
       .attr('fill', 'rgba(255,255,255,0.45)')
-      .attr('font-size', 9)
+      .attr('font-size', 10)
       .attr('dominant-baseline', 'middle')
       .text(sub.exactPct.toFixed(1) + '% · ' + fmtNum(sub.affected))
   })
@@ -330,7 +330,7 @@ function drawSunburst(rec, iso) {
     .attr('x', legendX)
     .attr('y', totalY - 8)
     .attr('fill', '#E8614A')
-    .attr('font-size', 9)
+    .attr('font-size', 10)
     .attr('font-weight', '700')
     .attr('letter-spacing', '0.1em')
     .text('TOTAL AFFECTED')
@@ -424,8 +424,8 @@ function drawLethalityMatrix(countryData, iso) {
   // Quadrant pill labels — all 4 quadrants
   function pillLabel(x, y, text, bg, anchor) {
     var pad = 4
-    var tw  = text.length * 5.5 + pad * 2
-    var th  = 13
+    var tw  = text.length * 6 + pad * 2
+    var th  = 14
     var rx  = anchor === 'end' ? x - tw : x
     g.append('rect')
       .attr('x', rx).attr('y', y - th + 3)
@@ -435,7 +435,7 @@ function drawLethalityMatrix(countryData, iso) {
       .attr('x', anchor === 'end' ? x - pad : x + pad)
       .attr('y', y - 2)
       .attr('text-anchor', anchor === 'end' ? 'end' : 'start')
-      .attr('fill', '#fff').attr('font-size', 7).attr('font-weight', '700')
+      .attr('fill', '#fff').attr('font-size', 8).attr('font-weight', '700')
       .attr('letter-spacing', '0.07em').attr('pointer-events', 'none')
       .text(text)
   }
@@ -465,20 +465,20 @@ function drawLethalityMatrix(countryData, iso) {
   // Axis labels — inside bottom margin, with log scale note
   svg.append('text')
     .attr('x', margin.left + iW / 2).attr('y', H - 38)
-    .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 9)
+    .attr('text-anchor', 'middle').attr('fill', '#9CA3AF').attr('font-size', 10)
     .text('← Disruption: Total Affected (log scale) →')
 
   // Y-axis label — stacked horizontal, centered on the y-axis (reads naturally, no head-tilt)
   var yLabelMid = margin.top + iH / 2
   svg.append('text')
     .attr('x', 4).attr('y', yLabelMid - 4)
-    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 9)
+    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 10)
     .attr('font-weight', '600')
     .text('↑ Lethality')
 
   svg.append('text')
-    .attr('x', 4).attr('y', yLabelMid + 7)
-    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 8)
+    .attr('x', 4).attr('y', yLabelMid + 8)
+    .attr('text-anchor', 'start').attr('fill', '#9CA3AF').attr('font-size', 10)
     .text('Deaths (log)')
 
   // Bubbles — drawn last so they're on top of quadrant fills
@@ -820,7 +820,7 @@ function drawStreamgraph(countryData, iso) {
   var legendX = 0
   DTYPES.forEach(function(dtype) {
     var meta = DTYPE_META[dtype]
-    var lw = meta.label.length * 6 + 20
+    var lw = meta.label.length * 6.5 + 22
 
     svg.append('rect')
       .attr('x', margin.left + legendX).attr('y', legendY - 10)
@@ -829,7 +829,7 @@ function drawStreamgraph(countryData, iso) {
 
     svg.append('text')
       .attr('x', margin.left + legendX + 13).attr('y', legendY - 2)
-      .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9)
+      .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 10)
       .text(meta.label)
 
     legendX += lw
@@ -839,5 +839,5 @@ function drawStreamgraph(countryData, iso) {
   svg.append('circle').attr('cx', margin.left + legendX + 6).attr('cy', legendY - 5).attr('r', 4)
     .attr('fill', '#fff').attr('stroke', '#E8614A').attr('stroke-width', 1.5)
   svg.append('text').attr('x', margin.left + legendX + 14).attr('y', legendY - 2)
-    .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 9).text('Gender Checkpoint')
+    .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 10).text('Gender Checkpoint')
 }

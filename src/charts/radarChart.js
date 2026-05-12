@@ -3,19 +3,23 @@ import { showTooltip, hideTooltip, tooltipHtml } from './utils.js'
 
 // ── Axes definition ──────────────────────────────────────────
 // Order intentionally groups by sector: climate → readiness → gender
-// This creates contiguous colored wedges in the radar background for easy visual parsing
+// This creates contiguous colored wedges in the radar background for easy visual parsing.
+// Every axis is a SUB-dimension (not an aggregate) — so the polygon shape faithfully
+// reflects independent risk signals. Readiness and Gender sub-indices are inverted so
+// that "outer = higher risk" holds consistently across all three sectors.
 export const AXES = [
-  // Climate sector (3 axes, top)
-  { key: 'vulnerability',         label: 'Climate\nVulnerability',  shortLabel: 'Climate',    invert: false, sector: 'climate' },
-  { key: 'vuln_food',             label: 'Food\nInsecurity',        shortLabel: 'Food',       invert: false, sector: 'climate' },
-  { key: 'vuln_water',            label: 'Water\nRisk',             shortLabel: 'Water',      invert: false, sector: 'climate' },
-  // Readiness sector (2 axes)
-  { key: 'adaptive_gap',          label: 'Adaptive\nGap',           shortLabel: 'Adapt. Gap', invert: false, sector: 'readiness' },
-  { key: 'readiness',             label: 'Readiness',               shortLabel: 'Readiness',  invert: true,  sector: 'readiness' },
-  // Gender sector (3 axes)
-  { key: 'gender_penalty',        label: 'Gender\nPenalty',         shortLabel: 'Gender',     invert: false, sector: 'gender' },
-  { key: 'political_empowerment', label: 'Political\nEmpowerment',  shortLabel: 'Political',  invert: true,  sector: 'gender' },
-  { key: 'econ_participation',    label: 'Economic\nParticipation', shortLabel: 'Economic',   invert: true,  sector: 'gender' },
+  // Climate sector (3 ND-GAIN vulnerability sub-sectors)
+  { key: 'vuln_food',              label: 'Food\nRisk',             shortLabel: 'Food Risk',   invert: false, sector: 'climate' },
+  { key: 'vuln_water',             label: 'Water\nRisk',            shortLabel: 'Water Risk',  invert: false, sector: 'climate' },
+  { key: 'vuln_health',            label: 'Health\nRisk',           shortLabel: 'Health Risk', invert: false, sector: 'climate' },
+  // Readiness sector (3 ND-GAIN readiness sub-sectors, inverted → "gap" metrics)
+  { key: 'ready_economic',         label: 'Economic\nReadiness Gap', shortLabel: 'Econ. Ready', invert: true,  sector: 'readiness' },
+  { key: 'ready_governance',       label: 'Governance\nGap',         shortLabel: 'Gov. Ready',  invert: true,  sector: 'readiness' },
+  { key: 'ready_social',           label: 'Social\nReadiness Gap',   shortLabel: 'Social',      invert: true,  sector: 'readiness' },
+  // Gender sector (3 WEF Gender Gap sub-indices, inverted → "gap" metrics)
+  { key: 'econ_participation',     label: 'Economic\nParticipation', shortLabel: 'Economic',    invert: true,  sector: 'gender' },
+  { key: 'political_empowerment',  label: 'Political\nEmpowerment',  shortLabel: 'Political',   invert: true,  sector: 'gender' },
+  { key: 'educational_attainment', label: 'Educational\nAttainment', shortLabel: 'Education',   invert: true,  sector: 'gender' },
 ]
 
 // Sector color mapping for background wedges

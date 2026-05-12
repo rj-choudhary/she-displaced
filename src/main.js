@@ -238,6 +238,15 @@ function drawHopeChart(data) {
 }
 
 async function init() {
+  // Kick off the world topology fetch in parallel with sdrs_data.json so the
+  // map is usually ready the instant the overlay hides. Same-origin from public/
+  // → served by Vercel's edge cache with 1-year immutable headers (vercel.json).
+  // Falls back to `null` (→ in-chart error message) if the fetch rejects.
+  const topologyPromise = d3.json('/countries-110m.json').catch(err => {
+    if (import.meta.env.DEV) console.error('[topology] failed:', err)
+    return null
+  })
+
   // Load full data — brotli-compressed to ~231KB, loads in <0.5s on most connections
   const data = await d3.json('/sdrs_data.json')
 
@@ -293,7 +302,7 @@ async function init() {
 
   // Render all charts with full data — year sliders work across 2006-2025
   requestAnimationFrame(() => {
-    safe('worldMap',    () => drawWorldMap(data))
+    safe('worldMap',    () => drawWorldMap(data, topologyPromise))
     safe('slope',       () => drawSlopeScrolly(data))
     safe('delta',       () => drawDeltaChart(data))
     safe('radar',       () => drawRadarChart(data))

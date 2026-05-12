@@ -38,7 +38,7 @@ const LAYER_CONFIG = {
   }
 }
 
-export async function drawWorldMap(data) {
+export async function drawWorldMap(data, topologyPromise = null) {
   const container = document.getElementById('world-map')
   const tooltip   = document.getElementById('map-tooltip')
   const legend    = document.getElementById('map-legend')
@@ -48,13 +48,29 @@ export async function drawWorldMap(data) {
   let currentLayer = 'sdrs'
   let currentYear  = 2025
 
-  // Load world topology
-  const world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+  // Load world topology — same-origin from /public so Vercel's edge cache serves
+  // it with 1-year immutable headers (see vercel.json). When main.js pre-fetches
+  // in parallel with sdrs_data.json, the promise resolves before drawWorldMap
+  // even starts rendering; otherwise we fall back to fetching here.
+  let world
+  try {
+    world = topologyPromise
+      ? await topologyPromise
+      : await d3.json('/countries-110m.json')
+  } catch (err) {
+    if (import.meta.env.DEV) console.error('[worldMap] topology failed:', err)
+    world = null
+  }
+  if (!world) {
+    container.innerHTML = `
+      <div style="padding:60px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6;">
+        Map geometry failed to load.<br/>
+        <span style="font-size:12px;opacity:0.7">Please check your connection and refresh.</span>
+      </div>
+    `
+    return
+  }
   const countries = topojson.feature(world, world.objects.countries)
-
-  // ISO numeric → ISO3 mapping (partial, covers most countries)
-  const numToIso3 = await d3.json('https://cdn.jsdelivr.net/npm/country-iso-2-to-3@1.1.1/index.json')
-    .catch(() => null)
 
   // Build a lookup from our data
   function buildLookup(year) {

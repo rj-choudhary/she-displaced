@@ -1,3 +1,4 @@
+import { inject } from '@vercel/analytics'
 import * as d3 from 'd3'
 import { initNav }           from './nav.js'
 import { initExplorer }      from './explorer.js'
@@ -15,6 +16,10 @@ import { initInsightPlayer } from './insightPlayer.js'
 function safe(name, fn) {
   try { fn() } catch(e) { if (import.meta.env.DEV) console.error(`[${name}] failed:`, e) }
 }
+
+// Vercel Web Analytics — collects anonymous page view/visit data.
+// No-op locally (auto-detects dev mode); active once deployed on Vercel.
+inject()
 
 // ── Hope: Resilience Champions ────────────────────────────────
 function drawHopeChart(data) {
